@@ -1,0 +1,236 @@
+{
+ "total": 344.25,
+ "blocks": [
+  {
+   "id": "hook",
+   "start": 0.4,
+   "dur": 13.25,
+   "txt": "Doscientos milisegundos. Eso es lo que tarda la mirada de un hombre en elegir a dónde ir, cuando ve el cuerpo de una mujer. Menos que un parpadeo. Y la ciencia ya sabe a dónde va esa primera mirada.",
+   "scene": "eye_hook",
+   "ost": "200 ms",
+   "src": "Dixson et al., 2011 · Arch Sex Behav",
+   "tag": "D"
+  },
+  {
+   "id": "pregunta",
+   "start": 14.25,
+   "dur": 7.03,
+   "txt": "¿De verdad los hombres nacen con debilidad por los pechos grandes... o su cerebro aprende a preferirlos?",
+   "scene": "title_card",
+   "ost": "¿NACEN O SE HACEN?",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "promesa",
+   "start": 21.88,
+   "dur": 15.76,
+   "txt": "En los próximos minutos vas a ver cámaras que siguen la mirada, hombres con hambre calificando cuerpos, y cuatro culturas que desmienten lo que creías saber. Spoiler: el tamaño no es lo que importa. O al menos... no como piensas.",
+   "scene": "promise_grid",
+   "ost": "EYE-TRACKING · HAMBRE · 4 CULTURAS",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "contexto1",
+   "start": 38.24,
+   "dur": 15.61,
+   "txt": "Empecemos por algo raro. En los otros grandes simios, las hembras no desarrollan senos visibles hasta el final de su primer embarazo. En los humanos aparecen en la pubertad... y se quedan. Y antes del embarazo, son sobre todo grasa.",
+   "scene": "primates",
+   "ost": "SENOS PERMANENTES: UNA RAREZA HUMANA",
+   "src": "Marlowe, 1998 · Human Nature",
+   "tag": "D"
+  },
+  {
+   "id": "contexto2",
+   "start": 54.45,
+   "dur": 9.5,
+   "txt": "¿Para qué cargar algo así todo el tiempo? Esa pregunta ha generado décadas de hipótesis. Algunas plausibles... y otras que ya fueron refutadas.",
+   "scene": "hypothesis_cards",
+   "ost": "¿PARA QUÉ?",
+   "src": "Pawłowski y Zieliński, 2021 (revisión)",
+   "tag": "H"
+  },
+  {
+   "id": "exp1",
+   "start": 64.55,
+   "dur": 20.16,
+   "txt": "Primer experimento. Nueva Zelanda. Un equipo de la Universidad Victoria de Wellington sienta a hombres frente a una pantalla, con una cámara que registra cada movimiento de sus ojos. Les muestran a la misma mujer, alterada digitalmente: cintura más o menos marcada, y senos pequeños, medianos o grandes.",
+   "scene": "eyetrack_setup",
+   "ost": "EXPERIMENTO 1 · EYE-TRACKING",
+   "src": "Dixson, Grimshaw, Linklater y Dixson · Arch Sex Behav 40, 43–50",
+   "tag": "D"
+  },
+  {
+   "id": "exp1r",
+   "start": 85.31,
+   "dur": 12.78,
+   "txt": "¿El resultado? En los primeros doscientos milisegundos, la mirada fue directo al pecho... o a la cintura. Hasta ahí, nada que sorprenda a nadie. Pero lo interesante vino después.",
+   "scene": "eyetrack_dots",
+   "ost": "1ª MIRADA: PECHO O CINTURA",
+   "src": "Dixson et al., 2011",
+   "tag": "D"
+  },
+  {
+   "id": "giro",
+   "start": 98.69,
+   "dur": 15.81,
+   "txt": "Cuando los investigadores cambiaron el tamaño de los senos... los ojos no cambiaron su comportamiento. Ni la primera mirada, ni el número de miradas, ni el tiempo mirando. El ojo se va al pecho. Pero no mide copas.",
+   "scene": "eyetrack_sizes",
+   "ost": "EL TAMAÑO NO CAMBIÓ LA MIRADA",
+   "src": "Dixson et al., 2011 · Arch Sex Behav 40, 51–58",
+   "tag": "P"
+  },
+  {
+   "id": "giro2",
+   "start": 115.1,
+   "dur": 11.34,
+   "txt": "Y en las calificaciones de atractivo pasó algo todavía más incómodo para el mito: la figura favorita fue la de cintura marcada... sin importar el tamaño del busto.",
+   "scene": "rating_bars",
+   "ost": "LA CINTURA PESÓ MÁS QUE EL BUSTO",
+   "src": "Dixson et al., 2011",
+   "tag": "P"
+  },
+  {
+   "id": "bio1",
+   "start": 127.04,
+   "dur": 12.41,
+   "txt": "Entonces, ¿qué señal estaría leyendo el cerebro? Una hipótesis famosa dice que el busto funciona como un anuncio biológico. Un letrero que dice: aquí hay reservas, aquí hay fertilidad.",
+   "scene": "brain_signal",
+   "ost": "HIPÓTESIS: SEÑAL BIOLÓGICA",
+   "src": "Marlowe, 1998",
+   "tag": "H"
+  },
+  {
+   "id": "bio2",
+   "start": 140.04,
+   "dur": 15.53,
+   "txt": "En dos mil cuatro, un estudio en Polonia midió hormonas a lo largo del ciclo. Las mujeres con cintura estrecha y senos grandes tenían en promedio un veintiséis por ciento más de estradiol... y un treinta y siete por ciento más a mitad del ciclo.",
+   "scene": "hormone_chart",
+   "ost": "+26% ESTRADIOL · +37% A MITAD DEL CICLO",
+   "src": "Jasieńska et al., 2004 · Proc R Soc B",
+   "tag": "H"
+  },
+  {
+   "id": "bio3",
+   "start": 156.18,
+   "dur": 12.06,
+   "txt": "Titular perfecto, ¿no? Pues cuando otro equipo intentó repetirlo en California... no encontró esa relación. Por eso esta idea se queda donde debe estar: en la caja de las hipótesis.",
+   "scene": "replication_fail",
+   "ost": "RÉPLICA: SIN RELACIÓN",
+   "src": "Réplica UCSB (ver bibliografía)",
+   "tag": "H"
+  },
+  {
+   "id": "humor1",
+   "start": 168.83,
+   "dur": 10.16,
+   "txt": "Si el cerebro masculino fuera un analista financiero, no estaría comprando volumen. Estaría buscando señales... aunque, a veces, se equivoque de gráfica.",
+   "scene": "brain_analyst",
+   "ost": "",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "exp2",
+   "start": 179.6,
+   "dur": 15.67,
+   "txt": "Segundo bloque de evidencia. Cuatro países: Brasil, Camerún, República Checa y Namibia. Hombres de culturas muy distintas eligen entre imágenes que cambian dos cosas por separado: el tamaño... y la firmeza.",
+   "scene": "world_map4",
+   "ost": "4 CULTURAS · TAMAÑO VS. FIRMEZA",
+   "src": "Havlíček et al., 2017 · Evol Hum Behav",
+   "tag": "D"
+  },
+  {
+   "id": "exp2r",
+   "start": 195.87,
+   "dur": 12.72,
+   "txt": "¿El tamaño favorito? El mediano. Seguido del grande. Con muchísima variación entre hombres y entre países. Pero hubo algo en lo que las cuatro culturas coincidieron: la firmeza.",
+   "scene": "size_vs_firm",
+   "ost": "GANA: MEDIANO Y FIRME",
+   "src": "Havlíček et al., 2017",
+   "tag": "D"
+  },
+  {
+   "id": "exp2x",
+   "start": 209.19,
+   "dur": 9.45,
+   "txt": "Y la firmeza, según los autores, podría ser una pista de juventud. Es decir, el cerebro no estaría midiendo cantidad... sino tiempo.",
+   "scene": "time_hourglass",
+   "ost": "¿CANTIDAD O TIEMPO?",
+   "src": "Havlíček et al., 2017",
+   "tag": "H"
+  },
+  {
+   "id": "hambre",
+   "start": 219.24,
+   "dur": 16.31,
+   "txt": "Ahora, el experimento más raro de todos. En Reino Unido, investigadores compararon a sesenta y seis hombres con hambre contra cincuenta y ocho recién comidos. Los hambrientos calificaron los senos grandes como más atractivos.",
+   "scene": "hunger_exp",
+   "ost": "66 CON HAMBRE VS. 58 SACIADOS",
+   "src": "Swami y Tovée, 2013 · PLoS ONE",
+   "tag": "P"
+  },
+  {
+   "id": "hambre2",
+   "start": 236.15,
+   "dur": 14.26,
+   "txt": "Y en Malasia, con doscientos sesenta y seis hombres, pasó lo mismo según el nivel económico: a menor seguridad de recursos, más atractivo el busto grande. O sea... tu gusto podría depender de si ya almorzaste.",
+   "scene": "ses_bars",
+   "ost": "MENOS RECURSOS → PREFERENCIA MÁS GRANDE",
+   "src": "Swami y Tovée, 2013",
+   "tag": "P"
+  },
+  {
+   "id": "cultura",
+   "start": 251.01,
+   "dur": 15.37,
+   "txt": "La cultura también empuja. Hombres de Papúa Nueva Guinea prefirieron senos más grandes que los de Samoa o Nueva Zelanda. Y en un estudio entre Brasil y República Checa, los brasileños prefirieron tamaños más grandes... de todo.",
+   "scene": "culture_compare",
+   "ost": "CULTURA = AJUSTE DE PERILLA",
+   "src": "Dixson et al., 2011 · Valentova et al., 2017",
+   "tag": "P"
+  },
+  {
+   "id": "socio",
+   "start": 266.98,
+   "dur": 17.52,
+   "txt": "¿Y la personalidad? En Polonia, ciento veintiocho hombres calificaron cinco tamaños. Los más abiertos a relaciones casuales dieron puntuaciones más altas... pero la diferencia solo apareció en los tamaños grandes. Y aun así, el favorito de ambos grupos fue de mediano a grande.",
+   "scene": "socio_dial",
+   "ost": "PERSONALIDAD: UN MATIZ, NO UNA REGLA",
+   "src": "Zelazniewicz y Pawłowski, 2011",
+   "tag": "P"
+  },
+  {
+   "id": "mitos",
+   "start": 285.1,
+   "dur": 26.35,
+   "txt": "Hora de limpiar internet. Mito uno: a todos los hombres les gustan los más grandes. Falso: en varios estudios gana el mediano. Mito dos: es puro instinto. Tampoco: el hambre, el dinero y la cultura mueven la preferencia. Mito tres: es culpa del porno. Puede influir, pero no encontramos un estudio que lo demuestre. Es una pregunta abierta.",
+   "scene": "myths",
+   "ost": "MITO VS. REALIDAD",
+   "src": "Ver bibliografía",
+   "tag": "P"
+  },
+  {
+   "id": "conclusion",
+   "start": 312.05,
+   "dur": 15.8,
+   "txt": "Así que la respuesta no es nacen... ni se hacen. Es las dos cosas. La mirada parece estar programada para buscar ciertas zonas. Pero lo que te gusta de lo que encuentras... lo ajustan tu cuerpo, tu entorno y tu historia.",
+   "scene": "conclusion",
+   "ost": "NACEN... Y SE HACEN",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "cta",
+   "start": 328.45,
+   "dur": 15.2,
+   "txt": "En el próximo episodio: por qué el cerebro parece perder la concentración ante un buen trasero... y por qué la respuesta podría estar en un ángulo de cuarenta y cinco grados. Y dime en los comentarios: ¿tu gusto es tuyo... o te lo enseñaron?",
+   "scene": "cta",
+   "ost": "EP. 2 → EL ÁNGULO DE 45°",
+   "src": "",
+   "tag": ""
+  }
+ ],
+ "titulo": "¿Nacen o se hacen? El misterio de los pechos grandes"
+}

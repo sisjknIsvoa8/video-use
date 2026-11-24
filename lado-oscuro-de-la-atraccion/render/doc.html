@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#07070b;font-family:"Inter",sans-serif;color:#f2efe9}
+.abs{position:absolute}
+#bg,#fg{position:absolute;inset:0}
+#gl{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+.disp{font-family:"Inter Display","Inter",sans-serif;font-weight:900;letter-spacing:-1px}
+.mono{font-family:"JetBrains Mono",monospace}
+.cap{position:absolute;left:260px;width:1400px;bottom:70px;text-align:center;font-weight:700;font-size:44px;line-height:1.25;color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.9),0 0 2px #000;z-index:50}
+.cap .k{color:#f5b942}
+.src{position:absolute;left:70px;bottom:28px;font-family:"JetBrains Mono",monospace;font-size:20px;color:rgba(242,239,233,.72);z-index:55;letter-spacing:.5px}
+.badge{display:inline-block;font-family:"JetBrains Mono",monospace;font-weight:800;font-size:20px;padding:5px 12px;border-radius:6px;margin-right:12px;letter-spacing:1px}
+.card{background:rgba(20,18,26,.88);border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 30px 60px rgba(0,0,0,.55)}
+.chapter{position:absolute;left:70px;top:52px;font-family:"JetBrains Mono",monospace;font-size:20px;letter-spacing:4px;color:#e1173f;z-index:55}
+.logo{position:absolute;right:70px;top:48px;font-family:"Inter Display";font-weight:900;font-size:20px;letter-spacing:3px;color:rgba(242,239,233,.55);z-index:55}
+</style></head>
+<body>
+<div id="bg"></div><canvas id="gl" width="1920" height="1080"></canvas><div id="fg"></div>
+<script>const EP=(new URLSearchParams(location.search)).get('ep')||'ep1';document.write(`<script src="../${EP}/timing.js"><\/script>`);</script>
+<script src="node_modules/three/build/three.min.js"></script>
+<script>
+/* ================= core ================= */
+const M=window.META, B=M.blocks, OUTRO=7.0, TOTAL=M.total+OUTRO;
+const C={red:"#e1173f",gold:"#f5b942",cyan:"#4fd1ff",green:"#3ddc97",ink:"#07070b",paper:"#f2efe9"};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)), lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,3), eIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eBack=x=>{const c1=1.7,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const pop=(u,t0,d=.45)=>u<t0?0:eBack(clamp((u-t0)/d));
+const fade=(u,t0,d=.4)=>eOut(lin(u,t0,t0+d));
+function rnd(s){const x=Math.sin(s*12.9898)*43758.5453;return x-Math.floor(x);}
+function el(html,x,y,{w=0,s=1,r=0,o=1,ox="50%",oy="50%",z=5,blur=0}={}){if(o<=.001||s<=.001)return "";return `<div class="abs" style="left:${x}px;top:${y}px;${w?`width:${w}px;`:""}opacity:${o};transform:rotate(${r}deg) scale(${s});transform-origin:${ox} ${oy};z-index:${z};${blur?`filter:blur(${blur}px);`:""}">${html}</div>`;}
+function txt(s,x,y,{size=72,color=C.paper,w=0,align="left",o=1,s2=1,weight=900,cls="disp",ls=-1,lh=1.02,z=8}={}){return el(`<div class="${cls}" style="font-size:${size}px;color:${color};text-align:${align};letter-spacing:${ls}px;line-height:${lh};font-weight:${weight}">${s}</div>`,x,y,{w,o,s:s2,z});}
+function kin(s,x,y,u,t0,o={}){ // word-by-word kinetic type
+  const ws=s.split(" ");return el(`<div class="disp" style="font-size:${o.size||96}px;color:${o.color||C.paper};text-align:${o.align||"left"};line-height:1.02;letter-spacing:-2px">${ws.map((w,i)=>{const p=clamp((u-t0-i*(o.stag||.08))/.35);return `<span style="display:inline-block;opacity:${p};transform:translateY(${(1-eOut(p))*40}px);filter:blur(${(1-p)*8}px);margin-right:.22em">${w}</span>`;}).join("")}</div>`,x,y,{w:o.w||1600,z:o.z||8});}
+function badge(tag){const m={D:["DEMOSTRADO","#0f5132",C.green],P:["PROBABLE","#5a4300",C.gold],H:["HIPÓTESIS","#5a0f1c","#ff6b81"]}[tag];return m?`<span class="badge" style="background:${m[1]};color:${m[2]};border:1px solid ${m[2]}">● ${m[0]}</span>`:"";}
+
+/* ---------- dress-form mannequin (non-explicit, educational) ---------- */
+function form(o={}){ // front view; whr: waist/hip, bust 0..1, firm 0..1, weight 0..1
+  const hip=100+(o.weight||0)*30, waist=hip*(o.whr||0.7), bust=o.bust??.5, firm=o.firm??.8, sh=96+(o.weight||0)*16;
+  const cx=200, by=215+(1-firm)*28, br=34+bust*30, bw=48+bust*10;
+  const id="g"+Math.floor(rnd((o.seed||1)*7)*1e6);
+  const col=o.color||"#c9a27e", hi=o.hi||"#f3dcc2";
+  const path=`M${cx-34} 60 C${cx-60} 70 ${cx-sh} 84 ${cx-sh} 120 C${cx-sh+6} 170 ${cx-waist*1.05} 200 ${cx-waist*1.08} 250 C${cx-waist} 300 ${cx-waist} 320 ${cx-waist} 330 C${cx-hip*.98} 380 ${cx-hip} 420 ${cx-hip*.97} 470 C${cx-hip*.9} 520 ${cx-hip*.78} 560 ${cx-hip*.7} 580 L${cx+hip*.7} 580 C${cx+hip*.78} 560 ${cx+hip*.9} 520 ${cx+hip*.97} 470 C${cx+hip} 420 ${cx+hip*.98} 380 ${cx+waist} 330 C${cx+waist} 320 ${cx+waist} 300 ${cx+waist*1.08} 250 C${cx+waist*1.05} 200 ${cx+sh-6} 170 ${cx+sh} 120 C${cx+sh} 84 ${cx+60} 70 ${cx+34} 60 Z`;
+  return `<svg viewBox="0 0 400 700" width="100%" height="100%" overflow="visible"><defs>
+   <linearGradient id="${id}" x1="0" x2="1"><stop offset="0" stop-color="${col}" stop-opacity=".55"/><stop offset=".45" stop-color="${hi}"/><stop offset="1" stop-color="${col}" stop-opacity=".6"/></linearGradient>
+   <radialGradient id="${id}b"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+   <rect x="194" y="580" width="12" height="80" fill="#3a3340"/><ellipse cx="200" cy="668" rx="70" ry="12" fill="#2a2430"/>
+   <path d="M${cx-18} 30 L${cx+18} 30 L${cx+22} 62 L${cx-22} 62Z" fill="${col}" opacity=".9"/><ellipse cx="200" cy="28" rx="20" ry="6" fill="#3a3340"/>
+   <path d="${path}" fill="url(#${id})" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+   <ellipse cx="${cx-bw*.62}" cy="${by}" rx="${br}" ry="${br*.86}" fill="${col}" opacity=".28"/><ellipse cx="${cx+bw*.62}" cy="${by}" rx="${br}" ry="${br*.86}" fill="${col}" opacity=".28"/>
+   <ellipse cx="${cx-bw*.62-6}" cy="${by-8}" rx="${br*.6}" ry="${br*.45}" fill="url(#${id}b)"/><ellipse cx="${cx+bw*.62-6}" cy="${by-8}" rx="${br*.6}" ry="${br*.45}" fill="url(#${id}b)"/>
+   <path d="M${cx} 100 L${cx} 575" stroke="rgba(0,0,0,.18)" stroke-width="2" stroke-dasharray="6 8"/>
+   ${o.tape?`<path d="M${cx-waist} 318 Q${cx} 336 ${cx+waist} 318" stroke="${C.gold}" stroke-width="5" fill="none"/><path d="M${cx-hip} 432 Q${cx} 452 ${cx+hip} 432" stroke="${C.cyan}" stroke-width="5" fill="none"/>`:""}
+  </svg>`;
+}
+function profile(o={}){ // side view; lumbar 0..1 curvature, belly 0..1
+  const L=o.lumbar??.5, bel=o.belly||0, col=o.color||"#c9a27e";
+  const back=`C 150 250 ${148-L*30} 300 ${150-L*40} 340 C ${150-L*46} 360 ${118-L*40} 380 ${112-L*44} 430 C ${108-L*40} 480 ${130} 520 ${140} 580`;
+  const front=`M 210 60 C 250 80 262 150 262 200 C 262 240 240 260 236 290 C ${236+bel*60} ${320+bel*10} ${244+bel*70} ${380} ${236+bel*40} 420 C 236 470 228 520 216 580`;
+  return `<svg viewBox="0 0 400 700" width="100%" height="100%" overflow="visible">
+   <path d="${front} L 140 580 ${back.replace("C 150 250","")} " fill="none"/>
+   <path d="M 170 60 C 150 120 150 200 150 250 ${back} L 216 580 C 228 520 236 470 ${236+bel*40} 420 C ${244+bel*70} 380 ${236+bel*60} ${320+bel*10} 236 290 C 240 260 262 240 262 200 C 262 150 250 80 210 60 Z" fill="${col}" opacity=".85" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+   <rect x="174" y="580" width="12" height="80" fill="#3a3340"/><ellipse cx="180" cy="668" rx="70" ry="12" fill="#2a2430"/>
+   ${o.spine?`<path d="M 172 110 C 168 200 ${168-L*20} 280 ${166-L*30} 340 C ${164-L*30} 380 ${160-L*18} 420 165 470" stroke="${C.red}" stroke-width="6" fill="none" stroke-dasharray="${o.spineDraw||2000}" stroke-linecap="round"/>`:""}
+  </svg>`;
+}
+function brainToon(o={}){const t=o.t||0;return `<svg viewBox="0 0 400 340" width="100%" height="100%" overflow="visible">
+  <path d="M90 230 C40 220 30 150 70 120 C60 70 120 40 160 60 C190 20 260 30 270 70 C330 60 370 120 340 160 C370 200 330 250 290 240 C270 280 200 290 180 260 C140 290 90 270 90 230Z" fill="#ff8fab" stroke="#2b1b25" stroke-width="7"/>
+  <path d="M120 110 Q150 130 140 160 M200 70 Q190 110 220 130 M280 100 Q260 140 290 170 M150 210 Q190 190 230 215" stroke="#d96a88" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <circle cx="165" cy="170" r="${o.wide?30:24}" fill="#fff" stroke="#2b1b25" stroke-width="5"/><circle cx="245" cy="170" r="${o.wide?30:24}" fill="#fff" stroke="#2b1b25" stroke-width="5"/>
+  <circle cx="${168+Math.sin(t*2)*5}" cy="172" r="10" fill="#2b1b25"/><circle cx="${248+Math.sin(t*2)*5}" cy="172" r="10" fill="#2b1b25"/>
+  ${o.glasses?`<rect x="128" y="140" width="76" height="60" rx="14" fill="none" stroke="#2b1b25" stroke-width="6"/><rect x="208" y="140" width="76" height="60" rx="14" fill="none" stroke="#2b1b25" stroke-width="6"/><path d="M204 165 L208 165" stroke="#2b1b25" stroke-width="6"/>`:""}
+  <path d="${o.smile?"M175 215 Q205 240 235 215":"M180 222 Q205 214 230 222"}" stroke="#2b1b25" stroke-width="6" fill="none" stroke-linecap="round"/>
+  ${o.tie?`<path d="M195 262 L215 262 L222 330 L205 345 L188 330Z" fill="${C.red}" stroke="#2b1b25" stroke-width="5"/>`:""}
+  <path d="M120 250 L100 320 M290 245 L310 320" stroke="#2b1b25" stroke-width="7" stroke-linecap="round"/></svg>`;}
+function gaze(points,u,{color=C.red}={}){ // points [[x,y,t0]]
+  let s="",prev=null;points.forEach(([x,y,t0],i)=>{const p=fade(u,t0,.25);if(p<=0)return;
+    if(prev) s+=`<line x1="${prev[0]}" y1="${prev[1]}" x2="${x}" y2="${y}" stroke="${color}" stroke-width="3" opacity="${.6*p}"/>`;
+    s+=`<circle cx="${x}" cy="${y}" r="${60*p}" fill="url(#heat)" opacity="${.9*p}"/><circle cx="${x}" cy="${y}" r="16" fill="${color}" opacity="${p}"/><text x="${x}" y="${y+7}" font-size="18" text-anchor="middle" fill="#fff" font-family="JetBrains Mono" font-weight="800">${i+1}</text>`;prev=[x,y];});
+  return `<svg class="abs" style="left:0;top:0;z-index:9" width="1920" height="1080"><defs><radialGradient id="heat"><stop offset="0" stop-color="${color}" stop-opacity=".7"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient></defs>${s}</svg>`;}
+function bars(items,u,t0,{x=0,y=0,w=900,h=380,max=1,unit=""}={}){ // items [[label,val,color]]
+  const bw=w/items.length;return el(`<svg width="${w}" height="${h+90}" overflow="visible">${items.map(([lab,v,col],i)=>{const p=eOut(lin(u,t0+i*.25,t0+i*.25+.9));const hh=h*v/max*p;return `<rect x="${i*bw+bw*.18}" y="${h-hh}" width="${bw*.64}" height="${hh}" rx="8" fill="${col||C.gold}"/><text x="${i*bw+bw/2}" y="${h+42}" font-size="26" text-anchor="middle" fill="${C.paper}" font-family="Inter" font-weight="700">${lab}</text>${p>.95?`<text x="${i*bw+bw/2}" y="${h-hh-16}" font-size="30" text-anchor="middle" fill="${col||C.gold}" font-family="JetBrains Mono" font-weight="800">${typeof v==="number"&&unit?Math.round(v*100)/100+unit:""}</text>`:""}`;}).join("")}<line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="rgba(255,255,255,.3)" stroke-width="2"/><text x="0" y="${h+80}" font-size="17" fill="rgba(242,239,233,.5)" font-family="JetBrains Mono" letter-spacing="1">GRÁFICO ILUSTRATIVO · MUESTRA EL ORDEN, NO LA MAGNITUD</text></svg>`,x,y,{z:7});}
+function stamp(text,x,y,u,t0,{color=C.red,size=64,r=-8}={}){if(u<t0)return "";const p=clamp((u-t0)/.22);return el(`<div class="disp" style="font-size:${size}px;color:${color};border:8px solid ${color};border-radius:14px;padding:6px 24px;white-space:nowrap;background:rgba(7,7,11,.55)">${text}</div>`,x,y,{s:1+(1-eOut(p))*1.6,o:clamp(p*2),r,z:20});}
+function file(title,body,x,y,u,t0,{w=520,r=0,stampTxt="",stampCol=C.red}={}){return el(`<div class="card" style="width:${w}px;padding:28px 32px;position:relative"><div class="mono" style="font-size:18px;color:${C.red};letter-spacing:3px">EXPEDIENTE</div><div class="disp" style="font-size:40px;margin:8px 0 10px">${title}</div><div style="font-size:24px;color:rgba(242,239,233,.75);line-height:1.35">${body}</div>${stampTxt&&u>t0+1.2?`<div class="disp" style="position:absolute;right:20px;top:24px;transform:rotate(-10deg) scale(${1+(1-eOut(clamp((u-t0-1.2)/.2)))*1.4});border:5px solid ${stampCol};color:${stampCol};font-size:26px;padding:2px 12px;border-radius:8px">${stampTxt}</div>`:""}</div>`,x,y,{s:pop(u,t0),r,z:7});}
+function globe(u,pins){let g="";for(let i=-60;i<=60;i+=30){const ry=Math.cos(i*Math.PI/180)*300;g+=`<ellipse cx="0" cy="${Math.sin(i*Math.PI/180)*300}" rx="${ry}" ry="${ry*.18}" fill="none" stroke="rgba(79,209,255,.25)" stroke-width="2"/>`;}
+  for(let k=0;k<6;k++){const a=((k*30+u*12)%180)*Math.PI/180;g+=`<ellipse cx="0" cy="0" rx="${Math.abs(Math.cos(a))*300}" ry="300" fill="none" stroke="rgba(79,209,255,.25)" stroke-width="2"/>`;}
+  return `<svg width="700" height="700" viewBox="-350 -350 700 700" overflow="visible"><circle r="300" fill="rgba(79,209,255,.05)" stroke="rgba(79,209,255,.6)" stroke-width="3"/>${g}${pins.map(([x,y,lab,t0])=>{const p=pop(u,t0);return p?`<g transform="translate(${x} ${y}) scale(${p})"><circle r="14" fill="${C.red}"/><circle r="${20+Math.sin(u*4)*6}" fill="none" stroke="${C.red}" stroke-width="3" opacity=".6"/><text x="22" y="10" font-size="30" fill="#fff" font-family="Inter" font-weight="800">${lab}</text></g>`:"";}).join("")}</svg>`;}
+
+/* ---------- 3D brain (procedural, three.js) ---------- */
+let R3=null;
+function initBrain(){
+  const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('gl'),antialias:true,alpha:true,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(1);renderer.setSize(1920,1080,false);
+  const scene=new THREE.Scene(), cam=new THREE.PerspectiveCamera(32,1920/1080,.1,100);cam.position.set(0,.2,6.2);
+  const grp=new THREE.Group();scene.add(grp);
+  const mat=new THREE.MeshStandardMaterial({color:0xd8a3ae,roughness:.55,metalness:.05});
+  function hemi(side){const g=new THREE.SphereGeometry(1,160,120);const p=g.attributes.position;const v=new THREE.Vector3();
+    for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);const n=v.clone().normalize();
+      const f=.055*Math.sin(9*n.x+3*n.y)*Math.sin(11*n.y+2*n.z)+.04*Math.sin(13*n.z+5*n.x)+.025*Math.sin(23*n.y+7*n.z)*Math.sin(19*n.x);
+      v.multiplyScalar(1+f);v.x*=.72;v.y*=.82;v.z*=1.12;if(side*v.x<-.02)v.x*=.25;p.setXYZ(i,v.x+side*.31,v.y,v.z);}
+    g.computeVertexNormals();return new THREE.Mesh(g,mat);}
+  grp.add(hemi(1));grp.add(hemi(-1));
+  const cb=new THREE.Mesh(new THREE.SphereGeometry(.55,64,48),new THREE.MeshStandardMaterial({color:0xc48c98,roughness:.6}));cb.scale.set(1.3,.7,.8);cb.position.set(0,-.62,-.78);grp.add(cb);
+  const st=new THREE.Mesh(new THREE.CylinderGeometry(.16,.12,.9,32),new THREE.MeshStandardMaterial({color:0xb7808c,roughness:.6}));st.position.set(0,-.95,-.35);st.rotation.x=.35;grp.add(st);
+  const wire=new THREE.Mesh(new THREE.SphereGeometry(1.75,48,32),new THREE.MeshBasicMaterial({color:0x4fd1ff,wireframe:true,transparent:true,opacity:.06}));grp.add(wire);
+  const glowMat=new THREE.MeshBasicMaterial({color:0xf5b942,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthTest:false});
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(.13,32,24),glowMat);glow.position.set(.16,-.22,.55);grp.add(glow);
+  const glow2=glow.clone();glow2.material=glowMat.clone();glow2.position.set(-.16,-.22,.55);grp.add(glow2);
+  const halo=new THREE.Mesh(new THREE.SphereGeometry(.34,32,24),new THREE.MeshBasicMaterial({color:0xf5b942,transparent:true,opacity:.25,blending:THREE.AdditiveBlending,depthTest:false}));halo.position.set(0,-.22,.55);grp.add(halo);
+  const acc=new THREE.Mesh(new THREE.SphereGeometry(.16,32,24),new THREE.MeshBasicMaterial({color:0xe1173f,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthTest:false}));acc.position.set(0,.28,.62);grp.add(acc);
+  const eyeV=new THREE.Mesh(new THREE.SphereGeometry(.2,32,24),new THREE.MeshBasicMaterial({color:0x4fd1ff,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthTest:false}));eyeV.position.set(0,.05,-1.05);grp.add(eyeV);
+  scene.add(new THREE.HemisphereLight(0xffeef2,0x1a0b14,.65));
+  const key=new THREE.DirectionalLight(0xffffff,1.6);key.position.set(3,4,5);scene.add(key);
+  const rim=new THREE.DirectionalLight(0xe1173f,2.2);rim.position.set(-4,1,-3);scene.add(rim);
+  const fill=new THREE.DirectionalLight(0x4fd1ff,.8);fill.position.set(4,-2,-2);scene.add(fill);
+  R3={renderer,scene,cam,grp,glow,glow2,halo,acc,eyeV};
+}
+function drawBrain(b,t){
+  const c=document.getElementById('gl');
+  if(!b||!b.show){c.style.opacity=0;return;}
+  if(!R3) initBrain();
+  c.style.opacity=b.o??1; c.style.transform=`translate(${b.x||0}px,${b.y||0}px) scale(${b.s||1})`;
+  R3.grp.rotation.y=(b.rotY??0)+t*(b.spin??.25); R3.grp.rotation.x=b.rotX??.12;
+  const pulse=.75+.25*Math.sin(t*5);
+  const g=b.glow||0; [R3.glow,R3.glow2].forEach(m=>{m.visible=g>0;m.material.opacity=.9*g*pulse;m.scale.setScalar(1+.3*g*pulse);});
+  R3.halo.visible=g>0;R3.halo.material.opacity=.3*g*pulse;R3.halo.scale.setScalar(1+.5*g);
+  R3.acc.visible=(b.acc||0)>0;R3.acc.material.opacity=.8*(b.acc||0)*pulse;
+  R3.eyeV.visible=(b.vis||0)>0;R3.eyeV.material.opacity=.8*(b.vis||0)*pulse;
+  R3.renderer.render(R3.scene,R3.cam);
+}
+function brainLabel(text,x,y,u,t0,color=C.gold){const p=fade(u,t0);return p?`<svg class="abs" style="left:0;top:0;z-index:12" width="1920" height="1080"><line x1="${x}" y1="${y}" x2="${x+180*p}" y2="${y-90*p}" stroke="${color}" stroke-width="3"/><circle cx="${x}" cy="${y}" r="7" fill="${color}"/></svg>`+txt(text,x+190,y-120,{size:30,color,o:p,cls:"mono",weight:800,ls:1,w:520}):"";}
+
+/* ---------- captions ---------- */
+const KW=/^(200|milisegundos|cintura|tamaño|firmeza|mediano|hambre|cultura|hipótesis|estradiol|réplica|0\.7|cero|siete|recompensa|ciegos|matsigenka|ángulo|cuarenta|grados|juventud|omega-3|mito|falso|nacen|hacen|cerebro|26|37|66|58|266|128|catorce|diecisiete)$/i;
+const CH=[];B.forEach(b=>{const w=b.txt.split(/\s+/);const g=[];let c=[];w.forEach(x=>{c.push(x);if(c.length>=7||(/[.!?…:]$/.test(x)&&c.length>=3)){g.push(c);c=[];}});if(c.length){if(g.length&&c.length<=2)g[g.length-1].push(...c);else g.push(c);}
+ const tot=g.reduce((a,x)=>a+x.join(" ").length+8,0);let t=b.start;g.forEach(x=>{const d=b.dur*(x.join(" ").length+8)/tot;CH.push({t0:t,t1:t+d,w:x});t+=d;});});
+function caption(t){const c=CH.find(c=>t>=c.t0&&t<c.t1+.05);if(!c)return "";const cl=w=>w.replace(/^[¡¿«"(]+/,"").replace(/[.,!?:…»")]+$/,"");return `<div class="cap" style="opacity:${fade(t,c.t0,.12)}">${c.w.map(w=>KW.test(cl(w))?`<span class="k">${w}</span>`:w).join(" ")}</div>`;}
+
+/* ================= scenes ================= */
+const S={};
+const center=(html,w,y)=>el(html,(1920-w)/2,y,{w});
+S.eye_hook=(u,d,b)=>{let s="";const p=lin(u,0,2.2);
+  s+=el(form({whr:.72,bust:.55,seed:2}),760,150,{w:400,s:1,z:5});
+  s+=gaze([[960,370,1.2],[960,470,1.8],[960,610,2.6]],u);
+  const ms=Math.floor(Math.min(200,lin(u,.2,1.4)*200));
+  s+=txt(`${ms}<span style="font-size:60px"> ms</span>`,140,330,{size:220,color:C.red});
+  s+=txt("EL TIEMPO DE LA<br>PRIMERA MIRADA",150,600,{size:34,cls:"mono",weight:800,ls:3,o:fade(u,1.4)});
+  s+=txt("¿A DÓNDE VA?",1300,440,{size:64,o:fade(u,d-3.5)});
+  return {s,brain:{show:u>d-3,o:fade(u,d-3)*.35,x:520,y:0,s:.6,spin:.3}};};
+S.title_card=(u,d,b)=>{let s="";s+=el(`<div class="mono" style="font-size:26px;letter-spacing:10px;color:${C.red};text-align:center">EL LADO OSCURO DE LA ATRACCIÓN</div>`,0,250,{w:1920,o:fade(u,.1)});
+  s+=kin(b.ost,160,400,u,.3,{size:130,w:1600,align:"center",color:C.paper,stag:.12});
+  s+=`<div class="abs" style="left:${960-300*eOut(lin(u,.4,1.6))}px;top:640px;width:${600*eOut(lin(u,.4,1.6))}px;height:4px;background:${C.red};z-index:6"></div>`;
+  return {s,brain:{show:true,o:.22,x:0,y:60,s:1.3,spin:.15}};};
+S.promise_grid=(u,d,b)=>{const items=b.ost.split(" · ");let s="";
+  items.forEach((it,i)=>{const t0=d*(.15+i*.25);s+=el(`<div class="card" style="width:500px;height:300px;padding:34px;display:flex;flex-direction:column;justify-content:flex-end"><div class="mono" style="color:${C.red};font-size:22px;letter-spacing:3px">0${i+1}</div><div class="disp" style="font-size:52px;line-height:1">${it}</div></div>`,140+i*560,360+Math.sin(u+i)*6,{s:pop(u,t0),r:(i-1)*1.5});});
+  if(u>d*.78) s+=stamp("EL TAMAÑO NO ES LO QUE IMPORTA",560,780,u,d*.78,{color:C.gold,size:46,r:-3});
+  return {s};};
+S.primates=(u,d,b)=>{let s="";const rows=[["GRANDES SIMIOS","senos visibles al final del 1er embarazo",.55,"#6b6f80"],["HUMANOS","desde la pubertad · permanentes",.22,C.red]];
+  rows.forEach(([a,bb,f,col],i)=>{const y=330+i*250,p=eOut(lin(u,.5+i*1.6,1.8+i*1.6));s+=txt(a,140,y,{size:56,o:fade(u,.3+i*1.6)});s+=txt(bb,140,y+70,{size:30,cls:"mono",weight:600,ls:1,color:"rgba(242,239,233,.7)",o:fade(u,.6+i*1.6)});
+   s+=`<div class="abs" style="left:900px;top:${y+20}px;width:${880*p}px;height:16px;background:rgba(255,255,255,.12);border-radius:8px"></div><div class="abs" style="left:${900+880*f*p}px;top:${y}px;width:${880*(1-f)*p}px;height:56px;background:${col};border-radius:12px;opacity:.85"></div>`;});
+  s+=txt("NACIMIENTO",900,800,{size:22,cls:"mono",ls:2,o:fade(u,1)})+txt("PUBERTAD",900+880*.22-40,800,{size:22,cls:"mono",ls:2,o:fade(u,2)})+txt("1ER EMBARAZO",900+880*.55-60,800,{size:22,cls:"mono",ls:2,o:fade(u,2)});
+  if(u>d*.72) s+=txt("ANTES DEL EMBARAZO: SOBRE TODO GRASA",140,880,{size:36,color:C.gold,o:fade(u,d*.72)});
+  return {s};};
+S.hypothesis_cards=(u,d,b)=>{let s="";[["Señal de fertilidad","El busto anunciaría hormonas y reservas.","PLAUSIBLE",C.gold],["Reserva para lactar","Grasa útil para embarazo y lactancia.","PLAUSIBLE",C.gold],["Imitar glúteos","Al caminar erguidos, el pecho \"copió\" la señal trasera.","DISCUTIDA","#ff6b81"]].forEach(([a,bb,st,col],i)=>{s+=file(a,bb,150+i*560,300+i*40,u,.5+i*d*.18,{w:500,r:(i-1)*2.5,stampTxt:st,stampCol:col});});
+  return {s};};
+S.eyetrack_setup=(u,d,b)=>{let s="";const k=u/d;
+  s+=el(`<div class="card" style="width:1000px;height:600px;padding:30px;position:relative"><div class="mono" style="color:${C.cyan};font-size:20px;letter-spacing:3px">● REC · EYE-TRACKER · NZ</div></div>`,460,190,{s:pop(u,.2)});
+  const sets=[[.9,.2],[.7,.2],[.7,.5],[.7,.85]];const idx=Math.min(3,Math.floor(lin(u,d*.35,d*.95)*4));const [whr,bust]=sets[idx];
+  s+=el(form({whr,bust,seed:idx+3}),760,250,{w:400,z:8});
+  s+=txt(`CINTURA-CADERA <span style="color:${C.gold}">${whr}</span><br>BUSTO <span style="color:${C.gold}">${["PEQUEÑO","PEQUEÑO","MEDIANO","GRANDE"][idx]}</span>`,1180,360,{size:34,cls:"mono",weight:800,ls:1,o:fade(u,d*.35),z:9});
+  s+=`<div class="abs" style="left:${560+Math.sin(u*1.7)*30}px;top:${320+Math.cos(u*1.3)*40}px;width:28px;height:28px;border:3px solid ${C.cyan};border-radius:50%;z-index:9;opacity:${fade(u,1)}"></div>`;
+  return {s};};
+S.eyetrack_dots=(u,d,b)=>{let s="";s+=el(form({whr:.7,bust:.5,seed:5}),760,150,{w:400});
+  s+=gaze([[960,365,.6],[960,470,1.4],[935,385,2.4],[985,480,3.2]],u);
+  s+=txt("1ª FIJACIÓN<br>&lt; 200 ms",130,360,{size:70,color:C.red,o:fade(u,.6)});
+  s+=txt("PECHO<br>O CINTURA",1300,380,{size:84,o:fade(u,1.6)});
+  return {s};};
+S.eyetrack_sizes=(u,d,b)=>{let s="";[.15,.5,.9].forEach((bu,i)=>{s+=el(form({whr:.7,bust:bu,seed:10+i}),210+i*520,190,{w:330,s:pop(u,.3+i*.4)});
+   const p=eOut(lin(u,d*.35+i*.3,d*.35+i*.3+1));s+=`<div class="abs" style="left:${230+i*520}px;top:860px;width:${290*p}px;height:22px;background:${C.cyan};border-radius:11px;z-index:9"></div>`;
+   s+=txt(["PEQUEÑO","MEDIANO","GRANDE"][i],230+i*520,800,{size:30,cls:"mono",weight:800,ls:2,o:fade(u,.5+i*.4)});});
+  s+=txt("TIEMPO MIRANDO",1660,850,{size:24,cls:"mono",ls:2,color:C.cyan,o:fade(u,d*.35)});
+  if(u>d*.62) s+=stamp("SIN DIFERENCIA SIGNIFICATIVA",520,470,u,d*.62,{color:C.gold,size:54,r:-4});
+  return {s};};
+S.rating_bars=(u,d,b)=>{let s="";s+=el(form({whr:.7,bust:.15,seed:20}),180,200,{w:300,s:pop(u,.2)})+el(form({whr:.9,bust:.9,seed:21}),560,200,{w:300,s:pop(u,.5)});
+  s+=txt("0.7 · BUSTO PEQUEÑO",160,840,{size:26,cls:"mono",ls:1,o:fade(u,.5)})+txt("0.9 · BUSTO GRANDE",560,840,{size:26,cls:"mono",ls:1,o:fade(u,.8)});
+  s+=bars([["CINTURA 0.7",.9,C.gold],["CINTURA 0.9",.55,"#6b6f80"]],u,1.2,{x:1060,y:260,w:700,h:420});
+  s+=txt("ATRACTIVO",1060,200,{size:26,cls:"mono",ls:3,color:C.gold,o:fade(u,1)});
+  if(u>d*.7) s+=stamp("GANÓ LA CINTURA",1100,760,u,d*.7,{color:C.green,size:50,r:-4});
+  return {s};};
+S.brain_signal=(u,d,b)=>{let s="";s+=brainLabel("¿SEÑAL DE FERTILIDAD?",1120,560,u,d*.4,C.gold);
+  s+=el(`<div class="card" style="padding:22px 30px"><div class="mono" style="color:${C.gold};font-size:22px;letter-spacing:3px">ANUNCIO BIOLÓGICO</div><div class="disp" style="font-size:48px">"AQUÍ HAY RESERVAS"</div></div>`,140,300,{s:pop(u,d*.55),r:-3});
+  return {s,brain:{show:true,x:180,y:20,s:1,glow:fade(u,d*.4),spin:.3}};};
+S.hormone_chart=(u,d,b)=>{let s="";const p=lin(u,.6,d*.6);let a="",bb="";for(let i=0;i<=40;i++){const x=i/40;if(x>p)break;const base=Math.exp(-Math.pow((x-.5)/.13,2));a+=(i?"L":"M")+(x*1000)+" "+(420-(.25+base*.55)*380);bb+=(i?"L":"M")+(x*1000)+" "+(420-(.25+base*.55*1.37+.05)*380);}
+  s+=el(`<svg width="1000" height="460" overflow="visible"><path d="M0 420 L1000 420" stroke="rgba(255,255,255,.3)" stroke-width="2"/><path d="${a}" stroke="#6b6f80" stroke-width="7" fill="none"/><path d="${bb}" stroke="${C.gold}" stroke-width="7" fill="none"/><text x="0" y="455" fill="${C.paper}" font-size="22" font-family="JetBrains Mono">DÍA 1</text><text x="470" y="455" fill="${C.paper}" font-size="22" font-family="JetBrains Mono">MITAD DEL CICLO</text><text x="0" y="-20" fill="rgba(242,239,233,.5)" font-size="17" font-family="JetBrains Mono">CURVA ILUSTRATIVA · CIFRAS: JASIEŃSKA ET AL., 2004</text></svg>`,140,300,{z:6});
+  s+=txt("ESTRADIOL",140,240,{size:28,cls:"mono",ls:4,color:C.gold,o:fade(u,.3)});
+  s+=txt("+26%",1260,330,{size:130,color:C.gold,o:fade(u,d*.55)})+txt("PROMEDIO",1270,470,{size:26,cls:"mono",ls:3,o:fade(u,d*.55)});
+  s+=txt("+37%",1260,560,{size:130,color:C.red,o:fade(u,d*.72)})+txt("A MITAD DEL CICLO",1270,700,{size:26,cls:"mono",ls:3,o:fade(u,d*.72)});
+  return {s};};
+S.replication_fail=(u,d,b)=>{let s="";s+=file("Polonia, 2004","Cintura estrecha + busto grande → más estradiol.",200,300,u,.2,{w:640,r:-3,stampTxt:"TITULAR",stampCol:C.gold});
+  s+=file("Réplica, California","Hormonas vs. tamaño de busto y cintura: <b>sin correlación</b>.",1060,340,u,d*.35,{w:640,r:3,stampTxt:"NO REPLICÓ",stampCol:C.red});
+  if(u>d*.72) s+=stamp("HIPÓTESIS",780,760,u,d*.72,{color:"#ff6b81",size:70,r:-6});
+  return {s};};
+S.brain_analyst=(u,d,b)=>{let s="";s+=el(brainToon({t:u,glasses:true,tie:true,smile:u>d*.5}),200,260,{w:520,s:pop(u,.1)});
+  const p=lin(u,.5,d);let path="";for(let i=0;i<=30;i++){const x=i/30;if(x>p)break;path+=(i?"L":"M")+(x*760)+" "+(300-Math.sin(x*9)*60-x*120+rnd(i)*30);}
+  s+=el(`<div class="card" style="padding:24px"><svg width="760" height="360"><path d="${path}" stroke="${C.green}" stroke-width="6" fill="none"/></svg><div class="mono" style="font-size:22px;color:${C.green};letter-spacing:2px">SEÑALES ▲ · VOLUMEN —</div></div>`,920,300,{s:pop(u,.4),r:2});
+  return {s};};
+S.world_map4=(u,d,b)=>{let s="";s+=el(globe(u,[[-120,40,"BRASIL",.6],[40,-20,"CAMERÚN",1.1],[60,-170,"R. CHECA",1.6],[60,110,"NAMIBIA",2.1]]),190,190,{w:700});
+  s+=txt("TAMAÑO",1100,360,{size:90,color:C.paper,o:fade(u,d*.45)})+txt("VS.",1100,470,{size:50,color:C.red,o:fade(u,d*.55)})+txt("FIRMEZA",1100,540,{size:90,color:C.gold,o:fade(u,d*.62)});
+  return {s};};
+S.size_vs_firm=(u,d,b)=>{let s="";s+=bars([["PEQUEÑO",.25,"#6b6f80"],["MEDIANO",.9,C.gold],["GRANDE",.62,"#c98a3a"]],u,.4,{x:140,y:300,w:800,h:420});
+  s+=txt("TAMAÑO MÁS ELEGIDO",140,230,{size:26,cls:"mono",ls:3,color:C.gold,o:fade(u,.3)});
+  const fp=fade(u,d*.55);s+=el(`<div class="card" style="width:640px;padding:30px"><div class="mono" style="color:${C.green};font-size:22px;letter-spacing:3px">FIRMEZA · 4 DE 4 CULTURAS</div><div style="display:flex;gap:16px;margin-top:20px">${[0,1,2,3].map(i=>`<div style="flex:1;height:90px;border-radius:12px;background:${C.green};opacity:${clamp((u-d*.6-i*.2)*3)}"></div>`).join("")}</div></div>`,1080,380,{o:fp,s:.9+.1*fp});
+  return {s};};
+S.time_hourglass=(u,d,b)=>{let s="";const p=lin(u,0,d);
+  s+=el(`<svg width="300" height="460" viewBox="0 0 300 460"><path d="M40 20 L260 20 L170 230 L260 440 L40 440 L130 230 Z" fill="none" stroke="${C.gold}" stroke-width="8"/><path d="M${60+80*p} ${40+170*p} L${240-80*p} ${40+170*p} L160 220 L140 220Z" fill="${C.gold}" opacity=".85"/><path d="M60 430 L240 430 L${150+70*p} ${430-160*p} L${150-70*p} ${430-160*p}Z" fill="${C.gold}" opacity=".85"/></svg>`,300,280,{s:pop(u,.2),r:Math.sin(u)*3});
+  s+=kin("¿CANTIDAD... O TIEMPO?",800,440,u,.6,{size:100,w:1100});return {s};};
+S.hunger_exp=(u,d,b)=>{let s="";
+  s+=el(`<div class="card" style="width:560px;padding:30px;text-align:center"><div style="font-size:120px">🍽️</div><div class="disp" style="font-size:52px;color:${C.red}">66 CON HAMBRE</div></div>`,220,280,{s:pop(u,.4),r:-2});
+  s+=el(`<div class="card" style="width:560px;padding:30px;text-align:center"><div style="font-size:120px">🍔</div><div class="disp" style="font-size:52px;color:${C.green}">58 SACIADOS</div></div>`,1140,280,{s:pop(u,1.2),r:2});
+  if(u>d*.6){s+=el(form({bust:.85,whr:.72,seed:30}),820,240,{w:280,s:pop(u,d*.6)});s+=stamp("LOS HAMBRIENTOS PREFIEREN MÁS GRANDE",520,700,u,d*.75,{color:C.gold,size:44,r:-3});}
+  return {s};};
+S.ses_bars=(u,d,b)=>{let s="";s+=txt("MALASIA · 266 HOMBRES",140,220,{size:28,cls:"mono",ls:3,color:C.gold,o:fade(u,.2)});
+  s+=bars([["NSE BAJO",.9,C.red],["NSE MEDIO",.65,C.gold],["NSE ALTO",.42,"#6b6f80"]],u,.5,{x:140,y:290,w:900,h:420});
+  s+=txt("PREFERENCIA POR<br>BUSTO GRANDE",1140,330,{size:64,o:fade(u,.8)});
+  if(u>d*.62) s+=el(brainToon({t:u,wide:true,smile:true}),1200,560,{w:320,s:pop(u,d*.62),r:-6})+txt("¿YA COMISTE?",1180,900,{size:44,color:C.gold,o:fade(u,d*.66)});
+  return {s};};
+S.culture_compare=(u,d,b)=>{let s="";const rows=[["PAPÚA N. GUINEA",.85],["SAMOA",.58],["N. ZELANDA",.58]];
+  rows.forEach(([n,v],i)=>{const t0=.4+i*.5,p=eOut(lin(u,t0,t0+1));s+=txt(n,140,300+i*120,{size:40,o:fade(u,t0)});s+=`<div class="abs" style="left:620px;top:${310+i*120}px;width:${600*v*p}px;height:44px;background:${C.gold};border-radius:10px;opacity:.9"></div>`;});
+  if(u>d*.55){[["BRASIL",.85,C.red],["R. CHECA",.55,"#6b6f80"]].forEach(([n,v,col],i)=>{const t0=d*.55+i*.4,p=eOut(lin(u,t0,t0+1));s+=txt(n,140,720+i*100,{size:40,o:fade(u,t0)});s+=`<div class="abs" style="left:620px;top:${728+i*100}px;width:${600*v*p}px;height:40px;background:${col};border-radius:10px"></div>`;});
+    s+=txt("…DE TODO",1300,760,{size:70,color:C.red,o:fade(u,d*.82)});}
+  s+=txt("PREFERENCIA DE TAMAÑO · ILUSTRATIVO",620,230,{size:24,cls:"mono",ls:3,color:C.gold,o:fade(u,.3)});
+  return {s};};
+S.socio_dial=(u,d,b)=>{let s="";const a=-120+240*eIO(lin(u,1,d*.7));
+  s+=el(`<svg width="560" height="360" viewBox="-280 -300 560 360"><path d="M-240 0 A240 240 0 0 1 240 0" stroke="rgba(255,255,255,.2)" stroke-width="30" fill="none"/><path d="M-240 0 A240 240 0 0 1 240 0" stroke="${C.gold}" stroke-width="30" fill="none" stroke-dasharray="${754*lin(u,1,d*.7)} 999"/><line x1="0" y1="0" x2="${Math.sin(a*Math.PI/180)*210}" y2="${-Math.cos(a*Math.PI/180)*210}" stroke="${C.red}" stroke-width="10" stroke-linecap="round"/><circle r="18" fill="${C.red}"/><text x="-250" y="50" fill="${C.paper}" font-size="22" font-family="JetBrains Mono">RESTRINGIDO</text><text x="110" y="50" fill="${C.paper}" font-size="22" font-family="JetBrains Mono">NO RESTRINGIDO</text></svg>`,160,340,{s:pop(u,.3)});
+  s+=txt("POLONIA · 128 HOMBRES",160,250,{size:26,cls:"mono",ls:3,color:C.gold,o:fade(u,.3)});
+  [.1,.3,.5,.7,.9].forEach((bu,i)=>{s+=el(form({whr:.72,bust:bu,seed:40+i}),860+i*200,330,{w:190,s:pop(u,.6+i*.2)});});
+  if(u>d*.75) s+=stamp("FAVORITO: MEDIANO-GRANDE",960,820,u,d*.75,{color:C.gold,size:44,r:-3});
+  return {s};};
+S.myths=(u,d,b)=>{let s="";const items=window.MYTHS||[];const n=items.length;
+  items.forEach(([m,r],i)=>{const t0=d*(.08+i*(.9/n));const p=fade(u,t0);if(!p)return;const y=230+i*230;
+   s+=el(`<div class="card" style="width:760px;padding:24px 30px"><div class="mono" style="color:#ff6b81;font-size:20px;letter-spacing:3px">MITO ${i+1}</div><div class="disp" style="font-size:40px;text-decoration:${u>t0+1.2?"line-through":"none"};text-decoration-color:${C.red};text-decoration-thickness:6px">${m}</div></div>`,140,y,{s:.92+.08*p,o:p});
+   if(u>t0+1.2) s+=el(`<div class="card" style="width:820px;padding:24px 30px;border-color:${C.green}"><div class="mono" style="color:${C.green};font-size:20px;letter-spacing:3px">REALIDAD</div><div style="font-size:34px;font-weight:800">${r}</div></div>`,960,y,{s:pop(u,t0+1.2)});});
+  return {s};};
+S.conclusion=(u,d,b)=>{let s="";s+=kin(b.ost,140,380,u,.4,{size:96,w:900,stag:.14});
+  s+=txt("EL LADO OSCURO DE LA ATRACCIÓN",140,300,{size:24,cls:"mono",ls:6,color:C.red,o:fade(u,.2)});
+  return {s,brain:{show:true,x:420,y:0,s:1,glow:.6,acc:.5,vis:.6,spin:.22}};};
+S.cta=(u,d,b)=>{let s="";s+=txt("PRÓXIMO EPISODIO",140,260,{size:26,cls:"mono",ls:6,color:C.red,o:fade(u,.2)});
+  s+=kin(b.ost,140,320,u,.5,{size:110,w:1500,stag:.1});
+  s+=el(`<div class="card" style="padding:26px 34px;border-color:${C.gold}"><div class="disp" style="font-size:48px;color:${C.gold}">💬 ${window.CTAQ||"¿TÚ QUÉ OPINAS?"}</div></div>`,140,700,{s:pop(u,d*.6),r:-1});
+  return {s,brain:{show:true,o:.5,x:520,y:40,s:.9,spin:.35}};};
+/* --- EP2 scenes --- */
+S.number_07=(u,d,b)=>{let s="";s+=txt("0.7",200,180,{size:420,color:C.gold,s2:.9+.1*eOut(lin(u,0,1.2))});
+  s+=txt("UN NÚMERO · 30 AÑOS DE PELEAS",220,700,{size:30,cls:"mono",ls:4,o:fade(u,1.5)});
+  return {s,brain:{show:u>d*.55,x:420,y:20,s:.95,glow:fade(u,d*.6),spin:.3,o:fade(u,d*.55)}};};
+S.whr_explain=(u,d,b)=>{let s="";s+=el(form({whr:.7,bust:.45,tape:u>1,seed:50}),760,150,{w:400});
+  s+=txt(`CINTURA <span style="color:${C.gold}">70</span>`,180,360,{size:64,o:fade(u,1)})+txt(`CADERA <span style="color:${C.cyan}">100</span>`,180,480,{size:64,o:fade(u,1.6)});
+  s+=txt(`70 ÷ 100 = <span style="color:${C.gold}">0.7</span>`,1260,420,{size:84,o:fade(u,d*.6)});return {s};};
+S.singh_figures=(u,d,b)=>{let s="";[.7,.8,.9,1.0].forEach((w,i)=>{const win=w===.7&&u>d*.55;s+=el(form({whr:w,bust:.45,seed:60+i,color:win?"#e8b04a":"#9a8f86"}),190+i*400,210,{w:320,s:pop(u,.3+i*.3)*(win?1.06:1)});s+=txt(w.toFixed(1),300+i*400,860,{size:48,cls:"mono",weight:800,color:win?C.gold:C.paper,o:fade(u,.5+i*.3)});});
+  if(u>d*.55) s+=stamp("GANA 0.7",760,140,u,d*.55,{color:C.gold,size:56,r:-4});
+  return {s};};
+S.brain_3d_reward=(u,d,b)=>{let s="";
+  s+=brainLabel("NÚCLEO ACCUMBENS",1120,620,u,d*.55,C.gold)+brainLabel("CORTEZA CINGULADA ANTERIOR",1080,400,u,d*.68,C.red);
+  s+=el(`<div class="card" style="padding:20px 26px"><div class="mono" style="color:${C.cyan};font-size:20px;letter-spacing:3px">fMRI · 14 HOMBRES</div><div class="disp" style="font-size:40px">ANTES / DESPUÉS</div></div>`,140,300,{s:pop(u,.6),r:-2});
+  return {s,brain:{show:true,x:120,y:20,s:1.05,glow:fade(u,d*.55),acc:fade(u,d*.68),spin:.25}};};
+S.caution_stamp=(u,d,b)=>{let s="";s+=stamp("n = 14",360,380,u,.3,{color:C.gold,size:120,r:-6});s+=txt("UNA PISTA,<br>NO UNA SENTENCIA",1060,380,{size:80,o:fade(u,d*.45)});
+  return {s,brain:{show:true,o:.35,x:-300,y:40,s:.9,glow:.6,spin:.2}};};
+S.blind_setup=(u,d,b)=>{let s="";let dots="";for(let i=0;i<60;i++){const x=(i%12)*60,y=Math.floor(i/12)*60;if(rnd(i)>.45)dots+=`<circle cx="${x}" cy="${y}" r="12" fill="${C.paper}" opacity="${.15+.5*fade(u,i*.03)}"/>`;}
+  s+=el(`<svg width="720" height="300">${dots}</svg>`,1100,320,{});
+  s+=kin("CIEGOS DE NACIMIENTO",140,360,u,.4,{size:110,w:900,stag:.12});
+  s+=txt("SIN REVISTAS · SIN PANTALLAS · SIN ANUNCIOS",150,640,{size:30,cls:"mono",ls:2,color:C.gold,o:fade(u,d*.55)});return {s};};
+S.mannequins=(u,d,b)=>{let s="";s+=el(form({whr:.7,bust:.45,seed:70}),220,170,{w:340,s:pop(u,.3)})+el(form({whr:.84,bust:.45,seed:71}),620,170,{w:340,s:pop(u,.6)});
+  s+=txt("0.70",340,820,{size:48,cls:"mono",weight:800,color:C.gold,o:fade(u,.5)})+txt("0.84",740,820,{size:48,cls:"mono",weight:800,o:fade(u,.8)});
+  ["✋","✋"].forEach((h,i)=>{s+=el(`<div style="font-size:90px">${h}</div>`,330+i*400+Math.sin(u*3+i)*20,480+Math.cos(u*2+i)*30,{o:fade(u,1)});});
+  if(u>d*.4){s+=bars([["CIEGOS",.6,C.gold],["CON VISTA",.85,C.red]],u,d*.4,{x:1160,y:300,w:600,h:380});s+=txt("FUERZA DE LA PREFERENCIA POR 0.70",1160,230,{size:26,cls:"mono",ls:3,color:C.gold,o:fade(u,d*.4)});}
+  if(u>d*.8) s+=stamp("LA VISTA LO AMPLIFICA",1080,820,u,d*.8,{color:C.cyan,size:44,r:-3});
+  return {s};};
+S.amazon=(u,d,b)=>{let s="";const sa="M-60 -300 L40 -280 L120 -200 L200 -150 L230 -60 L190 40 L120 120 L60 220 L20 320 L-30 340 L-50 240 L-90 120 L-140 20 L-170 -80 L-140 -180 L-110 -260Z";
+  s+=el(`<svg width="700" height="760" viewBox="-350 -380 700 760"><path d="${sa}" fill="rgba(61,220,151,.12)" stroke="${C.green}" stroke-width="4" stroke-dasharray="${3000*eOut(lin(u,.2,2.2))} 3000"/><g opacity="${fade(u,2)}"><circle cx="-120" cy="-60" r="16" fill="${C.red}"/><circle cx="-120" cy="-60" r="${26+Math.sin(u*4)*8}" fill="none" stroke="${C.red}" stroke-width="3"/><text x="-96" y="-50" fill="#fff" font-size="34" font-family="Inter" font-weight="800">PERÚ</text></g></svg>`,140,170,{});
+  s+=kin("MATSIGENKA",900,360,u,1.2,{size:120,w:1000,stag:.15})+txt("NATURE · 1998",910,500,{size:30,cls:"mono",ls:4,color:C.gold,o:fade(u,2)});
+  s+=txt("POCO CONTACTO CON MEDIOS OCCIDENTALES",910,580,{size:28,cls:"mono",ls:2,o:fade(u,d*.6)});return {s};};
+S.amazon_result=(u,d,b)=>{let s="";[[.7,0],[.8,.4],[.9,.8]].forEach(([w,wt],i)=>{const win=i===2&&u>d*.35;s+=el(form({whr:w,weight:wt,bust:.5,seed:80+i,color:win?"#3ddc97":"#9a8f86"}),220+i*420,200,{w:340,s:pop(u,.3+i*.3)*(win?1.05:1)});});
+  if(u>d*.35) s+=stamp("PREFIEREN MÁS PESO Y PROPORCIÓN MÁS ALTA",380,120,u,d*.35,{color:C.green,size:40,r:-2});
+  if(u>d*.7) s+=txt("MÁS CONTACTO → GUSTO MÁS OCCIDENTAL",420,880,{size:36,cls:"mono",ls:2,color:C.gold,o:fade(u,d*.7)});return {s};};
+S.brain_update=(u,d,b)=>{let s="";s+=el(brainToon({t:u,smile:true}),300,280,{w:520,s:pop(u,.1)});const p=lin(u,.5,d-.3);
+  s+=el(`<div class="card" style="width:760px;padding:30px"><div class="mono" style="color:${C.cyan};font-size:22px;letter-spacing:3px">CULTURA v2.0 · ACTUALIZANDO</div><div style="height:30px;background:rgba(255,255,255,.12);border-radius:15px;margin-top:18px;overflow:hidden"><div style="width:${p*100}%;height:100%;background:${C.cyan}"></div></div><div class="mono" style="margin-top:12px;font-size:28px">${Math.round(p*100)}%</div></div>`,960,420,{s:pop(u,.3)});return {s};};
+S.lumbar_intro=(u,d,b)=>{let s="";s+=el(profile({lumbar:.5,spine:u>d*.45,spineDraw:2000*lin(u,d*.45,d*.8)}),700,140,{w:460,s:pop(u,.2)});
+  s+=txt("UNIVERSIDAD DE TEXAS · 2015",140,300,{size:26,cls:"mono",ls:3,color:C.gold,o:fade(u,.3)})+kin("¿Y SI NO ES EL TAMAÑO?",140,360,u,.6,{size:76,w:600,stag:.1});
+  s+=txt("LA CURVA<br>LUMBAR",1300,440,{size:96,color:C.red,o:fade(u,d*.55)});return {s};};
+S.lumbar_angle=(u,d,b)=>{let s="";const q=eIO(lin(u,.5,d*.45));const L=.25+.45*q;s+=el(profile({lumbar:L,spine:true}),640,140,{w:460});
+  const ang=(30+15.5*q).toFixed(1);const a=ang*Math.PI/180;
+  s+=el(`<svg width="420" height="420" viewBox="-210 -210 420 420"><path d="M0 0 L180 0 A180 180 0 0 0 ${180*Math.cos(a)} ${-180*Math.sin(a)} Z" fill="rgba(245,185,66,.25)" stroke="${C.gold}" stroke-width="4"/><line x1="0" y1="0" x2="190" y2="0" stroke="${C.gold}" stroke-width="4"/><line x1="0" y1="0" x2="${190*Math.cos(a)}" y2="${-190*Math.sin(a)}" stroke="${C.gold}" stroke-width="4"/></svg>`,520,420,{o:fade(u,.6)});
+  s+=txt(q>=.999?"≈ 45.5°":ang+"°",1220,330,{size:150,color:C.gold,o:fade(u,.6)});
+  if(u>d*.62) s+=stamp("SE MANTIENE AUNQUE EL GLÚTEO NO CAMBIE",1060,760,u,d*.62,{color:C.cyan,size:34,r:-3});return {s};};
+S.pregnancy_spine=(u,d,b)=>{let s="";const bel=eIO(lin(u,.5,d*.45));s+=el(profile({lumbar:.6,belly:bel,spine:true}),700,140,{w:460});
+  s+=el(`<svg width="300" height="200"><path d="M20 100 L240 100" stroke="${C.red}" stroke-width="10" marker-end="url(#ar)"/><defs><marker id="ar" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="${C.red}"/></marker></defs></svg>`,1040,420,{o:fade(u,d*.3)});
+  s+=txt("PESO HACIA<br>ADELANTE",1340,420,{size:56,o:fade(u,d*.3)});
+  s+=txt("LA CURVA COMPENSA",140,420,{size:56,color:C.gold,o:fade(u,d*.5)});
+  if(u>d*.78) s+=stamp("HIPÓTESIS",760,820,u,d*.78,{color:"#ff6b81",size:64,r:-5});return {s};};
+S.fat_dha=(u,d,b)=>{let s="";let hex="";for(let i=0;i<7;i++){const x=i*110,y=(i%2)*60;hex+=`<polygon points="${[0,1,2,3,4,5].map(k=>`${x+50*Math.cos(k*Math.PI/3)},${y+50*Math.sin(k*Math.PI/3)}`).join(" ")}" fill="none" stroke="${C.cyan}" stroke-width="5" opacity="${fade(u,.4+i*.2)}"/>`;}
+  s+=el(`<svg width="820" height="200" viewBox="-60 -60 820 200">${hex}</svg>`,140,300,{});s+=txt("OMEGA-3 (DHA)",160,520,{size:64,color:C.cyan,o:fade(u,1.6)});
+  s+=el(form({whr:.7,bust:.4,seed:90}),1200,200,{w:320,s:pop(u,d*.35)});
+  s+=txt("¿ALMACÉN EN<br>CADERAS Y MUSLOS?",1520,420,{size:40,color:C.gold,o:fade(u,d*.45)});
+  if(u>d*.7) s+=stamp("CORRELACIÓN · HIPÓTESIS",300,760,u,d*.7,{color:"#ff6b81",size:46,r:-3});return {s};};
+S.fat_twist=(u,d,b)=>{let s="";s+=file("Lassek y Gaulin, 2018–2019","Cintura estrecha ≠ más salud ni más fertilidad.",200,300,u,.3,{w:680,r:-2,stampTxt:"NO CONFIRMADO",stampCol:C.red});
+  s+=kin("¿O SOLO ANUNCIA JUVENTUD?",1000,420,u,d*.55,{size:84,w:820,stag:.1});return {s};};
+S.social_feed=(u,d,b)=>{let s="";for(let i=0;i<3;i++){const off=(u*120+i*400)%1200;s+=el(`<div style="width:300px;height:600px;border-radius:40px;border:6px solid #333;background:#111;overflow:hidden;position:relative">${[0,1,2].map(k=>`<div style="position:absolute;left:20px;top:${((k*220-off)%660+660)%660-60}px;width:260px;height:200px;border-radius:20px;background:linear-gradient(135deg,${["#3a1020","#1d2a44","#2b2410"][k]},#0b0b10)"></div>`).join("")}</div>`,200+i*380,200,{s:pop(u,.2+i*.2),r:(i-1)*4});}
+  s+=stamp("PREGUNTA ABIERTA",1240,460,u,d*.5,{color:C.gold,size:48,r:-4});return {s};};
+
+/* ================= main render ================= */
+function blockAt(t){let i=0;for(let k=0;k<B.length;k++)if(t>=B[k].start-.35)i=k;return i;}
+function render(t){
+  const bg=document.getElementById('bg'),fg=document.getElementById('fg');
+  if(t>=M.total){ // outro
+    const u=t-M.total;
+    bg.innerHTML=`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 50%,#1a0b14,#07070b 70%)"></div>`;
+    fg.innerHTML=txt("EL LADO OSCURO<br>DE LA ATRACCIÓN",0,330,{size:120,w:1920,align:"center",o:fade(u,.2)})+txt(window.OUTRO_TXT||"",0,640,{size:30,cls:"mono",ls:4,w:1920,align:"center",color:C.red,o:fade(u,.8)})+txt("Fuentes completas en la descripción",0,760,{size:24,cls:"mono",w:1920,align:"center",color:"rgba(242,239,233,.6)",o:fade(u,1.2)});
+    drawBrain({show:true,o:.3*fade(u,0),x:0,y:0,s:1.4,spin:.2},t);return;}
+  const i=blockAt(t), b=B[i], start=b.start-.35, next=(i+1<B.length?B[i+1].start-.35:M.total), d=next-start, u=t-start;
+  const fn=S[b.scene]||S.conclusion; const out=fn(u,d,b)||{};
+  // background: deep gradient + grid + drifting particles + light leak
+  let h=`<div class="abs" style="inset:0;background:radial-gradient(ellipse at ${50+Math.sin(t*.1)*10}% 40%,#1a0e18 0%,#07070b 65%)"></div>`;
+  h+=`<div class="abs" style="inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:80px 80px;background-position:${-t*6}px ${-t*4}px"></div>`;
+  let pts="";for(let k=0;k<40;k++){const x=(rnd(k)*1920+t*(8+rnd(k+3)*14))%1920,y=(rnd(k+1)*1080-t*(4+rnd(k+5)*6)+2160)%1080;pts+=`<circle cx="${x}" cy="${y}" r="${1+rnd(k+2)*2.5}" fill="rgba(245,185,66,${.08+rnd(k+4)*.2})"/>`;}
+  h+=`<svg class="abs" style="inset:0" width="1920" height="1080">${pts}</svg>`;
+  h+=`<div class="abs" style="left:${-400+((t*40)%2800)}px;top:-300px;width:500px;height:1700px;background:linear-gradient(90deg,transparent,rgba(225,23,63,.06),transparent);transform:rotate(20deg)"></div>`;
+  bg.innerHTML=h;
+  // camera: slow push + transition whip
+  const push=1+.05*lin(u,0,Math.max(6,d)); const wi=clamp(u/.35), whip=1-eOut(wi);
+  let f=`<div class="abs" style="inset:0;transform:translateX(${whip*160}px) scale(${push});transform-origin:50% 50%;filter:blur(${(whip*10).toFixed(1)}px);opacity:${clamp(wi*2)}">${out.s||""}</div>`;
+  // UI: chapter, logo, source + badge, captions, vignette, grain, letterbox
+  const ch=(window.CHAPTERS||[]).filter(c=>B.findIndex(x=>x.id===c[0])<=i).pop();
+  if(ch) f+=`<div class="chapter">${ch[1]}</div>`;
+  f+=`<div class="logo">EL LADO OSCURO DE LA ATRACCIÓN</div>`;
+  if(b.src) f+=`<div class="src" style="opacity:${fade(u,.8)}">${badge(b.tag)}FUENTE · ${b.src}</div>`;
+  f+=caption(t);
+  let gr="";for(let k=0;k<160;k++){gr+=`<rect x="${rnd(k+Math.floor(t*30)*.37)*1920}" y="${rnd(k*3+Math.floor(t*30)*.71)*1080}" width="2" height="2" fill="rgba(255,255,255,${rnd(k*7)*.12})"/>`;}
+  f+=`<svg class="abs" style="inset:0;z-index:60;pointer-events:none" width="1920" height="1080">${gr}</svg>`;
+  f+=`<div class="abs" style="inset:0;z-index:61;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.6) 100%)"></div>`;
+  const flash=clamp(1-u/.12)*(i>0?.25:0); if(flash) f+=`<div class="abs" style="inset:0;z-index:62;background:#fff;opacity:${flash}"></div>`;
+  fg.innerHTML=f;
+  const br=out.brain; if(br){br.x=(br.x||0)+whip*160;} drawBrain(br,t);
+}
+window.render=render;window.TOTAL=TOTAL;window.ready=Promise.resolve();
+</script>
+<script>
+/* episode-specific data */
+if(EP==="ep1"){window.MYTHS=[["A todos les gustan los más grandes","En varios estudios gana el mediano."],["Es puro instinto","Hambre, dinero y cultura mueven la preferencia."],["Es culpa del porno","Pregunta abierta: no hay estudio causal sólido."]];
+ window.CHAPTERS=[["exp1","CAPÍTULO I · LA MIRADA"],["bio1","CAPÍTULO II · LA SEÑAL"],["exp2","CAPÍTULO III · LO QUE MUEVE EL GUSTO"],["mitos","CAPÍTULO IV · MITOS"]];
+ window.CTAQ="¿TU GUSTO ES TUYO... O TE LO ENSEÑARON?";window.OUTRO_TXT="EPISODIO 1 · ¿NACEN O SE HACEN?";}
+if(EP==="ep2"){window.MYTHS=[["0.7 es una ley universal","Los matsigenka lo desmienten."],["El trasero es una droga para el cerebro","Exagerado: 14 hombres, un estudio."],["Es solo tamaño","El ángulo y la proporción pesan más que el volumen."]];
+ window.CHAPTERS=[["whr1","CAPÍTULO I · EL NÚMERO"],["ciegos","CAPÍTULO II · CIEGOS Y AMAZONAS"],["angulo","CAPÍTULO III · EL ÁNGULO"],["mitos","CAPÍTULO IV · MITOS"]];
+ window.CTAQ="¿ESTE GUSTO SE PUEDE DESAPRENDER?";window.OUTRO_TXT="EPISODIO 2 · EL ÁNGULO SECRETO";}
+render(0);
+</script>
+</body></html>

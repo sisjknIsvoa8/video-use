@@ -1,0 +1,216 @@
+{
+ "total": 326.11,
+ "blocks": [
+  {
+   "id": "hook",
+   "start": 0.4,
+   "dur": 15.26,
+   "txt": "Cero punto siete. Un número tan simple que lleva más de treinta años provocando peleas entre científicos. Y que, según un estudio de resonancia magnética, le enciende al cerebro masculino la misma zona que se activa con la recompensa.",
+   "scene": "number_07",
+   "ost": "0.7",
+   "src": "Singh, 1993 · Platek y Singh, 2010",
+   "tag": "P"
+  },
+  {
+   "id": "pregunta",
+   "start": 16.26,
+   "dur": 6.4,
+   "txt": "¿Por qué una parte del cerebro parece perder la concentración... cuando aparece un buen trasero?",
+   "scene": "title_card",
+   "ost": "¿POR QUÉ PIERDE LA CONCENTRACIÓN?",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "promesa",
+   "start": 23.26,
+   "dur": 15.29,
+   "txt": "Hoy vas a conocer a hombres ciegos de nacimiento que tocaron maniquíes, a un pueblo del Amazonas que rompió la regla, y un ángulo exacto de la columna que podría explicarlo todo. Spoiler: quizá no es el glúteo... es la curva.",
+   "scene": "promise_grid",
+   "ost": "CIEGOS · AMAZONAS · 45.5°",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "whr1",
+   "start": 39.16,
+   "dur": 13.04,
+   "txt": "Primero, el concepto clave: la proporción cintura-cadera. Divides la medida de la cintura entre la de la cadera. Si la cintura mide setenta y la cadera cien... eso da cero punto siete.",
+   "scene": "whr_explain",
+   "ost": "CINTURA ÷ CADERA",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "whr2",
+   "start": 52.79,
+   "dur": 17.89,
+   "txt": "En mil novecientos noventa y tres, el psicólogo Devendra Singh, en Texas, mostró dibujos de figuras con distintas proporciones. La de cero punto siete ganaba una y otra vez. Y propuso una explicación: esa forma estaría ligada a juventud, hormonas y salud.",
+   "scene": "singh_figures",
+   "ost": "SINGH, 1993",
+   "src": "Singh · J Pers Soc Psychol 65, 293–307",
+   "tag": "P"
+  },
+  {
+   "id": "cerebro",
+   "start": 71.28,
+   "dur": 22.19,
+   "txt": "Diecisiete años después, el mismo Singh y Steven Platek metieron a catorce hombres en un resonador. Les mostraron fotos de mujeres antes y después de una cirugía que cambiaba su cintura y su cadera. Cuando la proporción se acercaba a cero punto siete, se activaban zonas de recompensa: la corteza cingulada anterior y el núcleo accumbens.",
+   "scene": "brain_3d_reward",
+   "ost": "NÚCLEO ACCUMBENS · RECOMPENSA",
+   "src": "Platek y Singh, 2010 · PLoS ONE",
+   "tag": "P"
+  },
+  {
+   "id": "cerebro2",
+   "start": 94.07,
+   "dur": 10.54,
+   "txt": "Catorce hombres. Un solo estudio. Así que calma con los titulares de \"el trasero actúa como una droga\". Es una pista interesante... no una sentencia.",
+   "scene": "caution_stamp",
+   "ost": "n = 14 · PISTA, NO PRUEBA",
+   "src": "Platek y Singh, 2010",
+   "tag": "P"
+  },
+  {
+   "id": "ciegos",
+   "start": 105.21,
+   "dur": 15.0,
+   "txt": "Ahora, la pregunta incómoda: ¿y si esa preferencia solo la aprendimos viendo revistas? En Países Bajos, investigadores lo pusieron a prueba con hombres ciegos de nacimiento. Nunca vieron un cuerpo, ni una revista, ni un anuncio.",
+   "scene": "blind_setup",
+   "ost": "CIEGOS DE NACIMIENTO",
+   "src": "Karremans, Frankenhuis y Arons, 2010 · Evol Hum Behav",
+   "tag": "P"
+  },
+  {
+   "id": "ciegos2",
+   "start": 120.8,
+   "dur": 21.31,
+   "txt": "Les pidieron tocar dos maniquíes de volumen similar: uno con proporción de cero punto siete... y otro de cero punto ochenta y cuatro. La mayoría prefirió el de cero punto siete. Pero ojo: en los hombres que sí veían, la preferencia era más fuerte. La vista no la crea... pero la amplifica.",
+   "scene": "mannequins",
+   "ost": "0.70 VS. 0.84",
+   "src": "Karremans et al., 2010",
+   "tag": "P"
+  },
+  {
+   "id": "amazonas",
+   "start": 142.71,
+   "dur": 15.46,
+   "txt": "Y justo cuando parecía una ley universal... llegó el Amazonas. En mil novecientos noventa y ocho, la revista Nature publicó un estudio con los matsigenka, un pueblo del sureste de Perú con muy poco contacto con medios occidentales.",
+   "scene": "amazon",
+   "ost": "PERÚ · MATSIGENKA",
+   "src": "Yu y Shepard, 1998 · Nature 396",
+   "tag": "D"
+  },
+  {
+   "id": "amazonas2",
+   "start": 158.77,
+   "dur": 12.92,
+   "txt": "Les mostraron las mismas figuras de Singh. Prefirieron figuras más pesadas, con una proporción más alta. Y los grupos con más contacto con el exterior se parecían más al gusto occidental.",
+   "scene": "amazon_result",
+   "ost": "LA REGLA NO ES UNIVERSAL",
+   "src": "Yu y Shepard, 1998",
+   "tag": "D"
+  },
+  {
+   "id": "humor",
+   "start": 172.29,
+   "dur": 6.24,
+   "txt": "O sea: el cerebro trae un borrador de fábrica... y la cultura le pone las actualizaciones.",
+   "scene": "brain_update",
+   "ost": "ACTUALIZACIÓN DISPONIBLE",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "angulo",
+   "start": 179.13,
+   "dur": 14.01,
+   "txt": "Pero el giro más elegante llegó en dos mil quince, de la Universidad de Texas. David Lewis y su equipo, incluido David Buss, se preguntaron: ¿y si no es el tamaño del glúteo, sino la curvatura de la espalda baja?",
+   "scene": "lumbar_intro",
+   "ost": "LA CURVA LUMBAR",
+   "src": "Lewis, Russell, Al-Shawaf y Buss, 2015 · Evol Hum Behav",
+   "tag": "P"
+  },
+  {
+   "id": "angulo2",
+   "start": 193.73,
+   "dur": 15.64,
+   "txt": "Manipularon perfiles de mujeres y encontraron un punto dulce: una curva de unos cuarenta y cinco punto cinco grados. Y lo más interesante: cuando separaron la curvatura del tamaño del glúteo... la preferencia por el ángulo se mantuvo.",
+   "scene": "lumbar_angle",
+   "ost": "≈ 45.5°",
+   "src": "Lewis et al., 2015",
+   "tag": "P"
+  },
+  {
+   "id": "angulo3",
+   "start": 209.98,
+   "dur": 17.67,
+   "txt": "Su hipótesis: durante el embarazo, el peso se desplaza hacia adelante. Una columna con esa curva lo compensa mejor. Para nuestros ancestros, eso podía significar caminar, buscar comida... y sobrevivir. Es elegante. Pero sigue siendo una hipótesis.",
+   "scene": "pregnancy_spine",
+   "ost": "HIPÓTESIS: UNA COLUMNA PARA EL EMBARAZO",
+   "src": "Lewis et al., 2015",
+   "tag": "H"
+  },
+  {
+   "id": "grasa",
+   "start": 228.24,
+   "dur": 18.57,
+   "txt": "Y hay otra idea, más polémica. Dos investigadores de California propusieron que la grasa de caderas y muslos guarda omega-3, un tipo de grasa clave para el cerebro del bebé. En una encuesta nacional de Estados Unidos, una proporción más baja se asoció con mejores puntajes cognitivos.",
+   "scene": "fat_dha",
+   "ost": "¿GRASA \"INTELIGENTE\"?",
+   "src": "Lassek y Gaulin, 2008 · Evol Hum Behav",
+   "tag": "H"
+  },
+  {
+   "id": "grasa2",
+   "start": 247.41,
+   "dur": 12.52,
+   "txt": "Pero los mismos autores, años después, no confirmaron que una cintura estrecha signifique más salud o más fertilidad. Y sugirieron algo más simple: que la proporción quizá solo anuncia juventud.",
+   "scene": "fat_twist",
+   "ost": "¿O SOLO JUVENTUD?",
+   "src": "Lassek y Gaulin, 2018–2019",
+   "tag": "H"
+  },
+  {
+   "id": "redes",
+   "start": 260.53,
+   "dur": 12.45,
+   "txt": "¿Y las redes sociales? Es posible que estén empujando el gusto hacia curvas más exageradas. Pero aquí no tenemos un experimento que lo demuestre, así que lo dejamos como lo que es: una pregunta.",
+   "scene": "social_feed",
+   "ost": "PREGUNTA ABIERTA",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "mitos",
+   "start": 273.58,
+   "dur": 22.0,
+   "txt": "Mitos, rápido. Mito uno: cero punto siete es una ley universal. Falso: los matsigenka lo desmienten. Mito dos: el trasero es una droga para el cerebro. Exagerado: catorce hombres, un estudio. Mito tres: es solo tamaño. Falso: el ángulo y la proporción pesan más que el volumen.",
+   "scene": "myths",
+   "ost": "MITO VS. REALIDAD",
+   "src": "Ver bibliografía",
+   "tag": "P"
+  },
+  {
+   "id": "conclusion",
+   "start": 296.18,
+   "dur": 11.29,
+   "txt": "Así que cuando el cerebro pierde la concentración... quizá no está mirando un trasero. Está calculando una proporción y un ángulo, con un borrador de fábrica... que la cultura editó.",
+   "scene": "conclusion",
+   "ost": "PROPORCIÓN + ÁNGULO + CULTURA",
+   "src": "",
+   "tag": ""
+  },
+  {
+   "id": "cta",
+   "start": 308.07,
+   "dur": 17.44,
+   "txt": "En el último episodio: la gran batalla. Pechos contra trasero. Hay un estudio argentino que encontró que casi nadie es neutral... y uno noruego que encontró algo todavía más raro. Mientras tanto, dime: ¿crees que este gusto se puede desaprender?",
+   "scene": "cta",
+   "ost": "EP. 3 → LA GRAN BATALLA",
+   "src": "",
+   "tag": ""
+  }
+ ],
+ "titulo": "El ángulo secreto: por qué el cerebro pierde la concentración"
+}
