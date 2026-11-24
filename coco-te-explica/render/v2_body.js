@@ -1,0 +1,302 @@
+/* ===== v2: lip sync, richer character animation, real photos ===== */
+const F="../fotos/";
+const ENVF=window.ENV||[];
+function speaking(t){for(let i=0;i<L_START.length;i++){if(t>=L_START[i]&&t<L_START[i]+L_DUR[i])return L_WHO[i];}return null;}
+function amp(t){const i=Math.floor(t*30);return ENVF[Math.min(ENVF.length-1,Math.max(0,i))]||0;}
+function talkOf(who,t){return speaking(t)===who?clamp(amp(t)*1.25):0;}
+function blinkAt(t,seed){const per=2.7+seed*.9, ph=(t+seed*1.3)%per;return ph<.13?Math.sin(ph/.13*Math.PI):0;}
+
+(function(){const st=document.createElement("style");st.textContent=`
+.photo{position:absolute;background:#fff;padding:12px 12px 12px;border-radius:10px;box-shadow:0 22px 50px rgba(0,0,0,.55)}
+.photo .win{position:relative;overflow:hidden;border-radius:4px;width:100%;height:100%}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .lab{position:absolute;left:-6px;top:-22px;background:#111;color:#fff;font-weight:900;font-size:30px;padding:8px 16px;border-radius:8px;white-space:nowrap;z-index:3}
+.photo .arch{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;font-weight:700;font-size:22px;padding:5px 10px;border-radius:6px;z-index:3}
+.tape{position:absolute;width:120px;height:34px;background:rgba(255,236,170,.75);top:-16px;left:50%;margin-left:-60px;transform:rotate(-4deg);z-index:4}
+.kw2{color:#ffd60a}
+.cur{background:#ffd60a;color:#111;border-radius:8px;padding:0 6px}
+`;document.head.appendChild(st);})();
+
+/* ---------- Coco v2 (rigged) ---------- */
+function coco2(o={}){
+  const e=o.expr||"happy", talk=o.talk||0, bl=o.blink||0, tilt=o.tilt||0, flap=o.flap||0, sq=o.squash||0, capY=o.capY||0;
+  const arc=(cx,dir)=>{const lift=(dir>0?-20:16)*(1-bl);return `<path d="M${cx-17} ${168} Q${cx} ${168+lift} ${cx+17} ${168}" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/>`;};
+  let eyes="";
+  if(e==="happy"||e==="worried") eyes=arc(150,1)+arc(250,1);
+  if(e==="sad") eyes=arc(150,-1)+arc(250,-1);
+  if(e==="shock") eyes=[150,250].map(cx=>`<ellipse cx="${cx}" cy="163" rx="14" ry="${Math.max(1.5,15*(1-bl))}" fill="#151515"/>${bl<.5?`<circle cx="${cx-5}" cy="158" r="4.5" fill="#fff"/>`:""}`).join("");
+  let brows="";
+  if(e==="worried"||e==="sad") brows=`<path d="M128 ${136+tilt*.2} L168 128" stroke="#151515" stroke-width="6" stroke-linecap="round"/><path d="M272 136 L232 128" stroke="#151515" stroke-width="6" stroke-linecap="round"/>`;
+  if(e==="shock") brows=`<path d="M126 128 L170 138" stroke="#151515" stroke-width="6" stroke-linecap="round"/><path d="M274 128 L230 138" stroke="#151515" stroke-width="6" stroke-linecap="round"/>`;
+  let mouth;
+  if(e==="shock"){const ry=19+talk*8;mouth=`<ellipse cx="200" cy="262" rx="${15+talk*3}" ry="${ry}" fill="#7a1f2b"/><ellipse cx="200" cy="${262+ry*.55}" rx="9" ry="${4+talk*3}" fill="#ff8fa3"/>`;}
+  else if(talk>.08){const ry=4+talk*20, rx=15+talk*7, cy=e==="sad"?262:256;mouth=`<ellipse cx="200" cy="${cy}" rx="${rx}" ry="${ry}" fill="#7a1f2b"/><ellipse cx="200" cy="${cy+ry*.55}" rx="${rx*.55}" ry="${Math.max(2,ry*.35)}" fill="#ff8fa3"/>`;}
+  else mouth={happy:`<path d="M172 250 Q200 276 228 250" stroke="#151515" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    sad:`<path d="M176 266 Q200 250 224 266" stroke="#151515" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    worried:`<path d="M178 260 Q189 252 200 260 Q211 268 222 260" stroke="#151515" stroke-width="6" fill="none" stroke-linecap="round"/>`}[e];
+  const ext=o.ext?`<g transform="translate(290 300) rotate(-25)"><rect x="0" y="0" width="56" height="120" rx="20" fill="#d62828"/><rect x="0" y="42" width="56" height="26" fill="#111"/><rect x="18" y="-22" width="20" height="26" fill="#9aa0a6"/><path d="M38 -12 L80 -40" stroke="#222" stroke-width="9" stroke-linecap="round"/></g>`:"";
+  return `<svg viewBox="0 0 400 480" width="100%" height="100%" overflow="visible">
+  <ellipse cx="200" cy="470" rx="${140*(1+sq*.4)}" ry="16" fill="rgba(0,0,0,.3)"/>
+  <g transform="translate(200 470) scale(${1+sq*.06} ${1-sq*.06}) translate(-200 -470)">
+  <path d="M86 410 C 40 400, 46 352, 78 366" stroke="#fff" stroke-width="22" fill="none" stroke-linecap="round" transform="rotate(${Math.sin((o.t||0)*9)*12} 86 410)"/>
+  <ellipse cx="200" cy="380" rx="118" ry="88" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <ellipse cx="200" cy="395" rx="62" ry="48" fill="#f6f6f6"/>
+  <ellipse cx="135" cy="452" rx="50" ry="25" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <ellipse cx="265" cy="452" rx="50" ry="25" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <ellipse cx="120" cy="458" rx="9" ry="6" fill="#ffc2cf"/><ellipse cx="280" cy="458" rx="9" ry="6" fill="#ffc2cf"/>
+  <ellipse cx="96" cy="372" rx="30" ry="48" fill="#fff" stroke="#e1e1e1" stroke-width="4" transform="rotate(${o.armL??15} 96 336)"/>
+  <ellipse cx="304" cy="372" rx="30" ry="48" fill="#fff" stroke="#e1e1e1" stroke-width="4" transform="rotate(${o.armR??-15} 304 336)"/>
+  ${ext}
+  <g transform="rotate(${tilt} 200 300)">
+  <rect x="122" y="282" width="156" height="24" rx="12" fill="#d62828"/>
+  <g transform="rotate(${Math.sin((o.t||0)*7)*10} 200 300)"><circle cx="200" cy="318" r="18" fill="#f2c14e" stroke="#c99a2e" stroke-width="3"/>
+  <text x="200" y="326" font-size="22" font-weight="900" text-anchor="middle" fill="#7a5a12" font-family="Inter">C</text></g>
+  <ellipse cx="200" cy="190" rx="128" ry="112" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <g transform="rotate(${8+flap} 98 128)"><path d="M98 118 C 46 126, 34 222, 58 262 C 80 294, 118 270, 120 222 C 122 180, 112 140, 98 118 Z" fill="#1d1d1f"/></g>
+  <g transform="rotate(${-8-flap*.8} 302 128)"><path d="M302 118 C 354 126, 366 222, 342 262 C 320 294, 282 270, 280 222 C 278 180, 288 140, 302 118 Z" fill="#1d1d1f"/></g>
+  <ellipse cx="128" cy="225" rx="${22+talk*3}" ry="13" fill="#ffb3c1" opacity=".85"/>
+  <ellipse cx="272" cy="225" rx="${22+talk*3}" ry="13" fill="#ffb3c1" opacity=".85"/>
+  <ellipse cx="200" cy="238" rx="60" ry="${42+talk*4}" fill="#f7f7f7"/>
+  ${eyes}${brows}
+  <ellipse cx="200" cy="214" rx="31" ry="22" fill="#151515"/>
+  <ellipse cx="189" cy="206" rx="9" ry="5" fill="#fff" opacity=".6"/>
+  ${mouth}
+  <g transform="translate(0 ${capY})">
+  <path d="M80 152 C 82 52, 318 52, 320 152 Z" fill="#efe5cc" stroke="#d8cba8" stroke-width="4"/>
+  <path d="M200 60 L200 150 M140 72 C150 100 152 130 150 152 M260 72 C250 100 248 130 250 152" stroke="#ddd0ae" stroke-width="3" fill="none"/>
+  <circle cx="200" cy="64" r="10" fill="#e2d5b2"/>
+  <path d="M246 142 C 300 124, 372 130, 394 158 C 362 170, 300 164, 246 154 Z" fill="#a8b38a" stroke="#8f9a72" stroke-width="3"/>
+  </g></g></g></svg>`;
+}
+function pipo2(o={}){
+  const e=o.expr||"calm", talk=o.talk||0, bl=o.blink||0;
+  const cl=(cx)=>`<path d="M${cx-12} 96 Q${cx} ${96-12*(1-bl)} ${cx+12} 96" stroke="#3b2a00" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+  const flat=(cx)=>`<path d="M${cx-12} 94 L${cx+12} 94" stroke="#3b2a00" stroke-width="7" stroke-linecap="round"/>`;
+  let eyes={calm:cl(78)+cl(122),annoyed:flat(78)+flat(122)+`<path d="M64 78 L90 86 M136 78 L110 86" stroke="#3b2a00" stroke-width="5" stroke-linecap="round"/>`,
+    skeptical:flat(78)+cl(122)+`<path d="M108 70 Q122 62 136 70" stroke="#3b2a00" stroke-width="5" fill="none" stroke-linecap="round"/>`}[e];
+  const op=talk*12;
+  return `<svg viewBox="0 0 200 230" width="100%" height="100%" overflow="visible">
+  <ellipse cx="100" cy="222" rx="70" ry="9" fill="rgba(0,0,0,.25)"/>
+  <path d="M100 42 C 92 14, 128 6, 122 30" stroke="#f0bd00" stroke-width="8" fill="none" stroke-linecap="round" transform="rotate(${Math.sin((o.t||0)*8)*12} 100 42)"/>
+  <circle cx="100" cy="102" r="64" fill="#ffd83d" stroke="#e8bd1c" stroke-width="4"/>
+  <ellipse cx="80" cy="80" rx="18" ry="10" fill="#fff3a6" opacity=".7"/>
+  ${eyes}
+  <ellipse cx="62" cy="114" rx="11" ry="7" fill="#ffab91" opacity=".8"/><ellipse cx="138" cy="114" rx="11" ry="7" fill="#ffab91" opacity=".8"/>
+  ${op>1?`<ellipse cx="100" cy="${118+op*.3}" rx="11" ry="${op*.6}" fill="#7a2e00"/>`:""}
+  <path d="M86 ${112-op*.2} Q100 ${100-op*.3} 114 ${112-op*.2} Q100 ${120-op*.2} 86 ${112-op*.2} Z" fill="#ff8c2a"/>
+  <path d="M88 ${116+op*.6} Q100 ${126+op} 112 ${116+op*.6} Z" fill="#f2711c"/>
+  <path d="M28 146 C 40 120, 160 120, 172 146 L 178 212 C 130 226, 70 226, 22 212 Z" fill="#d9363e"/>
+  <path d="M46 140 C 70 124, 130 124, 154 140 C 130 156, 70 156, 46 140 Z" fill="#8fe0c8"/>
+  <path d="M40 170 L160 172 M36 195 L164 197" stroke="#c22e35" stroke-width="4"/>
+  </svg>`;
+}
+function silhouette(){return `<svg viewBox="0 0 200 220" width="100%" height="100%"><circle cx="100" cy="70" r="50" fill="#9aa3b2"/><path d="M20 210 C 20 140, 180 140, 180 210 Z" fill="#9aa3b2"/><text x="100" y="92" font-size="70" font-weight="900" text-anchor="middle" fill="#fff" font-family="Inter">?</text></svg>`;}
+
+/* ---------- placement ---------- */
+function el(html,x,y,w,h,{s=1,r=0,o=1,ox="50%",oy="100%",z=1,extra=""}={}){
+  if(o<=0.001||s<=0.001) return "";
+  return `<div class="abs" style="left:${x}px;top:${y}px;width:${w}px;${h?`height:${h}px;`:""}opacity:${o};transform:rotate(${r}deg) scale(${s});transform-origin:${ox} ${oy};z-index:${z};${extra}">${html}</div>`;
+}
+function cocoAt(x,y,w,t,o={}){
+  const talk=talkOf("C",t), bl=blinkAt(t,0);
+  const bob=Math.sin(t*5)*5*(o.bob??1) - talk*10, hop=o.hop?Math.abs(Math.sin(t*7))*-40:0;
+  const tilt=(o.tilt??0)+Math.sin(t*2.1)*3+talk*5*Math.sin(t*9);
+  const flap=Math.sin(t*8)*5*(o.flapAmt??1)+talk*10*Math.sin(t*13);
+  const sq=talk*.8*Math.sin(t*14)+(o.hop?Math.max(0,Math.cos(t*7))*.8:0);
+  const armR=(o.armR??-15)-talk*45*Math.abs(Math.sin(t*5.5)), armL=(o.armL??15)+talk*20*Math.abs(Math.sin(t*4.3+1));
+  let s=(o.s??1);
+  if(o.enter!=null){const p=clamp((t-o.enter)/.5); s*=eBack(p); if(p<=0) return "";}
+  return el(coco2({...o,talk,blink:bl,tilt,flap,squash:sq,armR,armL,t,capY:-Math.abs(Math.sin(t*7))*talk*6}),x,y+bob+hop,w,w*1.2,{s,r:o.r||0,z:o.z||4});
+}
+function pipoAt(x,y,w,t,o={}){
+  const talk=talkOf("P",t), bl=blinkAt(t,.6);
+  const bob=Math.sin(t*6+1)*5-Math.abs(Math.sin(t*12))*talk*16;
+  let s=1; if(o.enter!=null){const p=clamp((t-o.enter)/.45); s=eBack(p); if(p<=0) return "";}
+  const r=(o.r||0)+talk*4*Math.sin(t*10);
+  return el(pipo2({...o,talk,blink:bl,t}),x,y+bob,w,w*1.15,{s,r,z:5});
+}
+/* real photo card with Ken Burns */
+function photo(src,x,y,w,h,t,t0,{rot=0,z=3,lab="",arch="",kb=[1.05,1.18],pos="50% 50%",panX=0,panY=0,gray=0,dur=8,tape=true,out=null}={}){
+  if(t<t0) return "";
+  const p=clamp((t-t0)/.45); const s=eBack(p);
+  const k=lin(t,t0,t0+dur); const sc=kb[0]+(kb[1]-kb[0])*k;
+  let ox=0,op=1; if(out!=null&&t>out){const q=eOut(clamp((t-out)/.6)); ox=q*1200; op=1-q;}
+  return `<div class="photo" style="left:${x+ox}px;top:${y}px;width:${w}px;height:${h}px;z-index:${z};opacity:${op};transform:rotate(${rot+(1-p)*-8}deg) scale(${s});transform-origin:50% 50%">
+   ${tape?'<div class="tape"></div>':""}${lab?`<div class="lab">${lab}</div>`:""}
+   <div class="win"><img src="${F+src}" style="object-position:${pos};transform-origin:${pos};transform:scale(${sc}) translate(${panX*k}px,${panY*k}px);filter:grayscale(${gray}) contrast(1.05)">${arch?`<div class="arch">${arch}</div>`:""}</div></div>`;
+}
+/* big-head sticker on a stick (style requested by user) */
+const HEADS={jensen:{src:"cab_jensen.png",ar:664/545},trump:{src:"cab_trump.png",ar:831/618}};
+function bigHead(who,x,y,w,t,t0,{rot=0,wob=1,gray=0,out=null,lab="",stick=true,z=6,bounce=1,sad=0,sweat=false}={}){
+  if(t<t0) return "";
+  const H=HEADS[who], h=w*H.ar;
+  const p=clamp((t-t0)/.5), s=eBack(p);
+  const r=rot+Math.sin(t*3.1+x)*4*wob+(1-p)*-25-sad*10;
+  const by=Math.sin(t*4.2+x*.01)*10*bounce+sad*lin(t,t0,t0+1.5)*60;
+  let ox=0,op=1; if(out!=null&&t>out){const q=eOut(clamp((t-out)/.7)); ox=q*1100; op=1-q;}
+  const stk=stick?`<div style="position:absolute;left:50%;top:${h*.82}px;width:24px;margin-left:-12px;height:${h*.75}px;background:linear-gradient(90deg,#c89b62,#e3bd86,#b4874f);border-radius:8px;box-shadow:0 8px 14px rgba(0,0,0,.35)"></div>`:"";
+  const sw=sweat?`<svg style="position:absolute;left:${w*.82}px;top:${h*.18+((t*120)%60)}px" width="40" height="56"><path d="M20 2 C 8 24, 2 34, 20 52 C 38 34, 32 24, 20 2 Z" fill="#8fd3ff" stroke="#fff" stroke-width="3"/></svg>`:"";
+  const lb=lab?`<div style="position:absolute;left:50%;transform:translateX(-50%);top:${h*.9}px;background:#111;color:#fff;font-weight:900;font-size:26px;padding:6px 14px;border-radius:8px;white-space:nowrap;z-index:2">${lab}</div>`:"";
+  return `<div class="abs" style="left:${x+ox}px;top:${y+by}px;width:${w}px;height:${h}px;z-index:${z};opacity:${op};transform:rotate(${r}deg) scale(${s});transform-origin:50% 90%">${stk}<img src="${F+H.src}" style="position:absolute;inset:0;width:100%;filter:drop-shadow(0 16px 18px rgba(0,0,0,.5)) grayscale(${gray})">${sw}${lb}</div>`;
+}
+function bgPhoto(src,t,t0,{tint="rgba(80,0,0,.55)",blur=3,o=.55,pos="50% 30%"}={}){
+  const k=lin(t,t0,t0+12);
+  return `<div class="abs" style="inset:-40px;overflow:hidden;opacity:${o}"><img src="${F+src}" style="width:100%;height:100%;object-fit:cover;object-position:${pos};transform-origin:${pos};filter:blur(${blur}px);transform:scale(${1.08+.1*k})"></div><div class="abs" style="inset:0;background:${tint}"></div>`;
+}
+/* kinetic headline: words stagger in */
+function khl(text,y,t,t0,{size=92,color="#fff",w=980,stag=.07}={}){
+  if(t<t0) return "";
+  const lines=text.split("<br>"); let k=0;
+  const html=lines.map(line=>line.split(" ").map(word=>{const p=clamp((t-t0-k*stag)/.32);k++;const s=eBack(p);
+    return `<span style="display:inline-block;opacity:${clamp(p*2)};transform:translateY(${(1-eOut(p))*40}px) scale(${s});margin:0 10px">${word}</span>`;}).join("")).join("<br>");
+  return `<div class="abs hl" style="left:${(1080-w)/2}px;top:${y}px;width:${w}px;font-size:${size}px;color:${color};z-index:6">${html}</div>`;
+}
+function chipEl(text,x,y,bg,t,t0,{size=44,z=7,r=0,color="#fff"}={}){return el(`<div class="chip" style="background:${bg};font-size:${size}px;color:${color}">${text}</div>`,x,y,0,0,{s:pop(t,t0),ox:"0%",oy:"50%",z,r});}
+function stampEl(text,y,color,t,t0,{size=78,r=-8}={}){
+  if(t<t0) return ""; const p=clamp((t-t0)/.22); const s=1+(1-eOut(p))*1.8;
+  return `<div class="abs" style="left:0;width:1080px;top:${y}px;text-align:center;z-index:9;opacity:${clamp(p*2)}"><span class="stamp" style="display:inline-block;color:${color};border-color:${color};font-size:${size}px;transform:rotate(${r}deg) scale(${s});background:rgba(0,0,0,.45)">${text}</span></div>`;
+}
+function itemEl(text,y,t,t0,{bg="rgba(255,255,255,.96)",color="#111",x=70,size=42,z=7}={}){
+  const p=fade(t,t0,.3); if(p<=0) return "";
+  return `<div class="abs" style="left:${x-(1-p)*120}px;top:${y}px;opacity:${p};z-index:${z}"><div class="item" style="background:${bg};color:${color};font-size:${size}px;box-shadow:0 10px 24px rgba(0,0,0,.35)">${text}</div></div>`;
+}
+const BG={0:["#5a1018","#14060a"],1:["#13284d","#060b18"],2:["#2c1b55","#0c0718"],3:["#4a1212","#120404"],4:["#2a2f3a","#0b0d12"],5:["#4d0f0f","#140303"],6:["#0f4a2c","#03140b"],7:["#20205a","#07071a"]};
+const STAMPS=[25.3,40.1,69.3,35.0];
+const ARCH="Foto de archivo · Stanford, abr 2026";
+const CR_J="Foto: Anders Eidesvik/Wikimedia Commons, CC BY 4.0 (recortada)";
+
+function sceneIndex(t){let i=0;for(let k=0;k<SCN.length;k++) if(t>=SCN[k]) i=k; return i;}
+
+function render(t){
+  const loop=t>=END_VOICE;
+  const si=loop?0:sceneIndex(t), ts=loop?END_VOICE:SCN[si];
+  const [c1,c2]=BG[si];
+  let h=`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 38%, ${c1} 0%, ${c2} 78%)"></div>`;
+  let s="";
+  // background photos
+  if(si===0) h+=bgPhoto("jensen_005.jpg",t,ts,{tint:"rgba(90,0,10,.55)",o:.6,pos:"50% 8%",blur:2});
+  if(si===5) h+=bgPhoto("nasdaq.jpg",t,ts,{tint:"rgba(70,0,0,.62)",o:.7,pos:"50% 35%"});
+  // light sweep + dots
+  const sw=((t*.25)%1)*2600-800;
+  h+=`<div class="abs" style="left:${sw}px;top:-200px;width:260px;height:2400px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);transform:rotate(18deg)"></div>`;
+  let dots="";for(let i=0;i<22;i++){const x=(rnd(i)*1080+t*18*(0.5+rnd(i+9)))%1080,y=(rnd(i+3)*1920+t*10)%1920;dots+=`<circle cx="${x}" cy="${y}" r="${3+rnd(i+5)*5}" fill="rgba(255,255,255,${.05+rnd(i+7)*.08})"/>`;}
+  h+=`<svg class="abs" style="inset:0" width="1080" height="1920">${dots}</svg>`;
+
+  if(loop||si===0){
+    const t0=loop?END_VOICE-.2:0;
+    s+=khl("EL CEO MÁS PODEROSO<br>RENUNCIÓ…",170,t,t0,{size:84});
+    if(!loop){ s+=khl("…Y VOLVIÓ<br>EN 11 DÍAS",480,t,1.6,{color:"#ffd60a",size:104,stag:.09}); s+=bigHead("jensen",700,700,300,t,.4,{rot:10,bounce:1.6,z:6}); }
+    const shake=(t-t0)<.6?Math.sin(t*70)*12*(1-(t-t0)/.6):0;
+    s+=el(coco2({expr:"shock",flap:Math.sin(t*14)*16,talk:loop?0:talkOf("C",t),blink:0,tilt:Math.sin(t*20)*3,t}),230+shake,760,620,744,{s:pop(t,t0,.3),z:5});
+  } else if(si===1){
+    s+=chipEl("29 OCT",60,120,"#d62828",t,ts);
+    s+=khl("LA SOSPECHA",220,t,ts+.05);
+    if(t<6.5){
+      s+=el(`<div class="card" style="padding:34px 40px"><div style="font-size:30px;font-weight:800;color:#888;letter-spacing:2px">TITULAR · 29 OCT</div><div style="font-size:52px;font-weight:900;line-height:1.08;margin-top:10px">Inteligencia de EE.UU. sospechaba de alguien muy cercano al CEO de Nvidia</div><div style="height:14px;background:#e5e7eb;border-radius:7px;margin-top:22px;width:90%"></div><div style="height:14px;background:#e5e7eb;border-radius:7px;margin-top:12px;width:70%"></div></div>`,120,400,840,0,{s:pop(t,3.9),r:-2+Math.sin(t*2)*.6,ox:"50%",oy:"50%"});
+    } else {
+      s+=bigHead("jensen",80,370,340,t,6.5,{rot:-6,lab:"JENSEN HUANG"});
+      s+=el(`<div style="text-align:center;font-weight:800;font-size:26px;color:#fff;text-shadow:0 2px 6px #000">CEO de Nvidia · foto de archivo</div>`,40,850,420,0,{o:fade(t,6.8),z:7});
+      s+=el(silhouette(),690,440,240,264,{s:pop(t,7.4),z:4});
+      s+=el(`<div style="text-align:center;font-weight:900;font-size:34px;color:#fff">ALICE HUANG<br><span style="font-weight:600;font-size:24px;opacity:.85">ex ejecutiva de Megaspeed</span></div>`,620,725,380,0,{o:fade(t,7.6)});
+      s+=el(`<div class="hl" style="font-size:90px;color:#ffd60a">≠</div><div style="font-weight:900;font-size:34px;color:#ffd60a;text-align:center">CERO<br>PARENTESCO</div>`,415,500,250,0,{s:pop(t,10.2),ox:"50%",oy:"50%",z:6});
+    }
+    s+=cocoAt(580,900,420,t,{expr:"worried",tilt:-6,armR:-60});
+  } else if(si===2){
+    s+=chipEl("8 NOV",60,120,"#d62828",t,ts);
+    s+=khl("LA CARTA",220,t,ts+.05);
+    s+=el(`<div class="card" style="background:#fffaf0;padding:40px 46px 40px 200px;position:relative"><div style="font-size:30px;color:#9a8f7a;font-weight:700">Carta de Jensen Huang · 8 nov 2026</div><div style="font-family:'Liberation Serif',serif;font-style:italic;font-size:58px;margin-top:16px;line-height:1.1">“I was unfaithful to my wife”</div><div style="font-size:38px;font-weight:800;margin-top:16px;color:#b91c1c">«Le fui infiel a mi esposa»</div></div>`,90,390,900,0,{s:pop(t,12.5),r:2,ox:"50%",oy:"50%",z:4});
+    s+=bigHead("jensen",30,320,210,t,12.8,{rot:-10,stick:false,z:6,bounce:.6,sad:t>14?0.3:0});
+    s+=cocoAt(90,880,470,t,{expr:t<18?"shock":"worried",enter:12.4});
+    s+=pipoAt(640,1000,300,t,{expr:"annoyed",enter:18.0});
+    s+=itemEl("✔ ADMITIDO: la infidelidad",780,t,18.5,{bg:"#16a34a",color:"#fff"});
+    s+=itemEl("✘ NO PROBADO: lo de espía",870,t,20.2,{bg:"#dc2626",color:"#fff"});
+  } else if(si===3){
+    const sh=t<ts+.5?Math.sin(t*60)*8:0;
+    s+=el(`<div class="hl" style="font-size:190px;color:#ffd60a">¿ESPÍA?</div>`,40+sh,170,1000,0,{s:pop(t,ts+.05),ox:"50%",oy:"50%",z:5});
+    s+=stampEl("NO PROBADO",440,"#ff3b3b",t,25.3,{size:96});
+    s+=itemEl("China: «pura invención»",620,t,27.3);
+    s+=itemEl("Singapur: no la investigó por espionaje",715,t,29.5);
+    s+=itemEl("Justicia EE.UU.: «no ha concluido»",810,t,32.0);
+    s+=cocoAt(60,960,420,t,{expr:"worried",tilt:-4});
+    s+=pipoAt(620,1050,300,t,{expr:t<25.2?"calm":"skeptical",enter:24.9});
+  } else if(si===4){
+    s+=chipEl("12 NOV",60,120,"#d62828",t,ts);
+    s+=chipEl("DÍA 0",790,120,"#111",t,ts+.3);
+    s+=khl("¡RENUNCIA!",215,t,ts+.05,{size:120});
+    s+=photo("nvidia_sign.jpg",130,400,520,390,t,ts+.15,{rot:-3,lab:"SEDE · SANTA CLARA",pos:"50% 45%",kb:[1.05,1.2]});
+    s+=bigHead("jensen",660,400,320,t,ts+.4,{rot:8,gray:lin(t,34.8,36),out:37.6,sad:1,bounce:.3,stick:true,lab:"ARCHIVO"});
+    s+=chipEl("CEO interina: Colette Kress",70,820,"#fff",t,35.6,{size:40,color:"#111"});
+    s+=itemEl("Prensa: ¿otra relación en la oficina?",905,t,37.8,{bg:"#fde68a"});
+    s+=stampEl("SIN CONFIRMAR",560,"#ff3b3b",t,40.1,{size:86,r:6});
+    s+=itemEl("Lo grave: no fue franco con la junta",990,t,42.0,{bg:"#ffd60a"});
+    s+=cocoAt(60,1050,400,t,{expr:"sad",bob:.4});
+    s+=pipoAt(680,1110,270,t,{expr:"skeptical",enter:39.9});
+  } else if(si===5){
+    s+=chipEl("20 NOV",60,120,"#d62828",t,ts);
+    s+=khl("¡LA BOLSA<br>SE INCENDIA!",205,t,ts+.05,{size:96});
+    const p=eOut(lin(t,45.3,48.6)); const pts=[[0,40],[90,52],[170,48],[250,90],[330,110],[420,220],[500,250],[560,300]];
+    let path="";const n=Math.max(1,Math.floor(p*(pts.length-1)));for(let i=0;i<=n;i++){const [x,y]=pts[i];path+=(i?"L":"M")+(x+40)+" "+(y+30);}
+    const last=pts[n];
+    const flames=t>46.5?[0,1,2,3].map(i=>{const fx=360+i*65,fh=60+Math.sin(t*16+i*1.7)*22;return `<path d="M${fx} 360 C ${fx-30} ${360-fh*.5}, ${fx-6} ${360-fh*.8}, ${fx} ${360-fh} C ${fx+6} ${360-fh*.8}, ${fx+30} ${360-fh*.5}, ${fx} 360 Z" fill="${i%2?'#ffb703':'#fb5607'}"/>`;}).join(""):"";
+    s+=el(`<div class="card" style="background:rgba(17,24,39,.92);padding:18px"><svg width="640" height="380"><path d="M40 20 L40 350 L630 350" stroke="#4b5563" stroke-width="4" fill="none"/><path d="${path}" stroke="#ef4444" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${last[0]+40}" cy="${last[1]+30}" r="${12+Math.sin(t*12)*4}" fill="#ef4444"/>${flames}<text x="600" y="40" fill="#9ca3af" font-size="26" text-anchor="end" font-family="Inter" font-weight="700">NVDA</text></svg></div>`,60,470,676,0,{s:pop(t,ts+.2),ox:"0%",oy:"50%"});
+    const z=1+.15*Math.max(0,1-Math.abs(t-49.2)*3);
+    s+=el(`<div class="hl" style="font-size:96px;color:#ff3b3b;text-align:right">-14%</div><div class="hl" style="font-size:40px;text-align:right">EN UN DÍA</div>`,760,560,280,0,{s:pop(t,49.0)*z,ox:"50%",oy:"50%",z:7});
+    s+=el(`<div class="chip" style="background:#ff3b3b;font-size:46px">≈ -490 MIL MILLONES $</div>`,60,880,0,0,{s:pop(t,50.6),ox:"0%",oy:"50%",z:7});
+    s+=cocoAt(40,1010,420,t,{expr:"shock",ext:true,armR:-70});
+    if(t>46.5&&t<51.5){let sp="";for(let i=0;i<26;i++){const k=(t*3+rnd(i))%1;const x=380+k*260+rnd(i+1)*30,y=1180-k*260+Math.sin(i+t*9)*25;sp+=`<circle cx="${x}" cy="${y}" r="${8+k*24}" fill="rgba(255,255,255,${.8-k*.65})"/>`;}s+=`<svg class="abs" style="inset:0;z-index:6" width="1080" height="1920">${sp}</svg>`;}
+    s+=pipoAt(720,1160,250,t,{expr:"skeptical",enter:52.5});
+    if(t>=52.5) s+=el(`<div class="card" style="background:#16a34a;color:#fff;padding:20px 28px;text-align:center"><div style="font-size:30px;font-weight:800">RÉCORD Q3</div><div style="font-size:54px;font-weight:900">$115.8 MIL MILLONES</div></div>`,470,985,560,0,{s:pop(t,52.8),r:Math.sin(t*3)*1.5,ox:"50%",oy:"50%",z:7});
+    if(t>=57.9) s+=el(`<div class="hl" style="font-size:110px;color:#ffd60a;background:rgba(0,0,0,.6);border-radius:30px;padding:20px">¿Y CÓMO<br>VOLVIÓ?</div>`,90,560,900,0,{s:pop(t,57.9),ox:"50%",oy:"50%",z:9});
+  } else if(si===6){
+    let cf="";for(let i=0;i<70;i++){const y=((t-ts)*(260+rnd(i)*220)+rnd(i+2)*-1900)%1920;if(y<-20)continue;const x=rnd(i+4)*1080+Math.sin(t*3+i)*30;cf+=`<rect x="${x}" y="${y}" width="16" height="26" fill="${["#ffd60a","#22c55e","#3b82f6","#ef4444","#fff"][i%5]}" transform="rotate(${t*200+i*40} ${x} ${y})"/>`;}
+    s+=chipEl("23 NOV",60,120,"#16a34a",t,ts);
+    s+=chipEl("DÍA 11",780,120,"#111",t,ts+.3);
+    s+=khl("¡VOLVIÓ!",205,t,ts+.05,{size:150,color:"#4ade80"});
+    s+=photo("jensen_027.jpg",70,400,940,470,t,ts+.15,{rot:-1.5,arch:ARCH,pos:"50% 30%",kb:[1.05,1.22],panX:-20});
+    s+=bigHead("jensen",590,290,400,t,59.9,{rot:6,bounce:2.2,z:8,lab:"¡DE VUELTA!",out:65.4}); s+=chipEl("VOTO UNÁNIME",90,430,"#2563eb",t,60.6,{z:8});
+    const z=1+.15*Math.max(0,1-Math.abs(t-62.2)*3);
+    s+=el(`<div class="hl" style="font-size:130px;color:#4ade80;white-space:nowrap;text-align:left;text-shadow:0 6px 0 #000,0 0 30px #000">+31% ▲</div>`,70,690,460,0,{s:pop(t,62.0)*z,ox:"50%",oy:"50%",z:8});
+    s+=bigHead("trump",30,840,250,t,65.6,{rot:-8,stick:false,z:7,bounce:.8});
+    s+=itemEl("Trump presionó por su regreso",905,t,65.8,{x:280,size:36});
+    s+=itemEl("Gobierno: «no vemos riesgo»",990,t,67.2,{x:280,size:36});
+    s+=stampEl("INVESTIGACIÓN: SIGUE ABIERTA",640,"#ffd60a",t,69.3,{size:56,r:-4});
+    s+=cocoAt(300,1080,380,t,{expr:"happy",armL:120,armR:-120,hop:t<65.6});
+    s+=pipoAt(740,1160,240,t,{expr:"skeptical",enter:65.6});
+    s+=`<svg class="abs" style="inset:0;z-index:10" width="1080" height="1920">${cf}</svg>`;
+  } else if(si===7){
+    s+=el(`<div class="hl" style="font-size:104px"><span style="color:#ffd60a">¿TALENTO</span><br>O <span style="color:#7dd3fc">CONFIANZA?</span></div>`,40,180,1000,0,{s:pop(t,ts+.05),ox:"50%",oy:"50%",z:6});
+    s+=photo("capitolio.jpg",70,450,940,380,t,74.9,{rot:1.5,lab:"CAPITOLIO · WASHINGTON",pos:"50% 40%",kb:[1.05,1.2]});
+    s+=chipEl("1 DIC · Cámara (a puerta cerrada)",110,700,"#fff",t,75.5,{size:36,color:"#111",z:8});
+    s+=chipEl("3 DIC · Senado (pública, 10:00)",110,770,"#fff",t,76.9,{size:36,color:"#111",z:8});
+    s+=bigHead("jensen",720,560,230,t,75.2,{rot:6,stick:false,z:8,sweat:true,bounce:.6,lab:"¿QUÉ DIRÁ?"}); s+=chipEl("PARTE 2 →",640,880,"#d62828",t,79.0,{size:54});
+    s+=el(`<div class="hl" style="font-size:64px;color:#ffd60a">¿TÚ LO PERDONARÍAS? 👇</div>`,40,975,1000,0,{s:pop(t,80.9),ox:"50%",oy:"50%",z:7});
+    s+=cocoAt(110,1020,410,t,{expr:"happy"});
+    s+=pipoAt(560,1110,270,t,{expr:"calm"});
+  }
+  // sources + photo credits
+  const SRC=["",`Fuente: The New York Times, 29 oct<br>${CR_J}`,`Fuente: carta de Huang, 8 nov<br>${CR_J}`,"Fuentes: Reuters · CNN · Gob. de Singapur · DOJ",
+    "Fuentes: Nvidia · Reuters, 12 nov<br>Fotos: Will Buckner, CC BY 2.0 · A. Eidesvik, CC BY 4.0 · Wikimedia Commons","Fuentes: Nasdaq, 20 nov · Nvidia (Q3)<br>Foto: Nielsoncaetanosalmeron/Wikimedia Commons, CC BY 4.0",
+    "Fuentes: Nvidia, 23 nov · CNBC · CNN<br>Fotos: A. Eidesvik, CC BY 4.0 · retrato oficial de Trump (dominio público)","Fuentes: Comité Bancario del Senado · CBS<br>Foto: Architect of the Capitol, dominio público"];
+  if(loop) {} else if(si===0) s+=`<div class="abs src" style="font-size:20px">${CR_J}</div>`;
+  else if(!(si===7&&t>80)) s+=`<div class="abs src" style="font-size:21px;line-height:1.3;width:940px">${SRC[si]}</div>`;
+  if(!loop && si===7 && t>80) s+=`<div class="abs src" style="width:940px;font-size:21px;line-height:1.3;opacity:${fade(t,80)}">©️ 2026 Coco / Ernesto · Contenido original informativo. Las acusaciones de espionaje son alegaciones no probadas; las investigaciones siguen abiertas. Fotos: Wikimedia Commons (CC BY) y dominio público.</div>`;
+  // karaoke captions
+  const ch=CHUNKS.find(c=>t>=c.t0&&t<c.t1+0.05);
+  if(ch&&!loop){
+    const clean=w=>w.toLowerCase().replace(/^[¡¿«]+/,"").replace(/[.,!?:…»]+$/,"");
+    const per=(ch.t1-ch.t0)/ch.words.length; const cur=Math.min(ch.words.length-1,Math.floor((t-ch.t0)/per));
+    const words=ch.words.map((w,i)=>i===cur?`<span class="cur">${w}</span>`:(KWSET.has(clean(w))?`<span class="kw2">${w}</span>`:w)).join(" ");
+    const tag=ch.who==="P"?`<span class="tag" style="background:#ffd83d;color:#3b2a00">PIPO</span>`:`<span class="tag" style="background:#fff;color:#111">COCO</span>`;
+    const p=pop(t,ch.t0,.18);
+    s+=`<div class="abs cap" style="top:1415px;z-index:20;transform:scale(${.9+.1*p});opacity:${clamp(p*1.5)}"><span class="capbox">${tag}${words}</span></div>`;
+  }
+  // camera: push-in, stamp shake, whip-in on scene cut
+  const zoom=1+0.045*lin(t,ts,ts+8);
+  let cx=0,cy=0; for(const st of STAMPS){const d=t-st; if(d>0&&d<.35){cx+=Math.sin(d*90)*14*(1-d/.35);cy+=Math.cos(d*80)*10*(1-d/.35);}}
+  const wi=(!loop&&si>0)?clamp((t-ts)/.22):1; const whip=(1-eOut(wi));
+  const blur=whip*14;
+  document.getElementById("stage").innerHTML=`<div class="abs" style="inset:0;transform:translate(${cx+whip*420}px,${cy}px) scale(${zoom});transform-origin:50% 45%;filter:blur(${blur.toFixed(1)}px)">${h}${s}</div><div class="abs" style="inset:0;pointer-events:none;background:radial-gradient(circle at 50% 45%, transparent 55%, rgba(0,0,0,.45) 100%);z-index:40"></div>`;
+}
+window.render=render; window.TOTAL=TOTAL;
+window.ready=Promise.all(["jensen_005.jpg","jensen_027.jpg","nvidia_sign.jpg","nasdaq.jpg","capitolio.jpg","cab_jensen.png","cab_trump.png"].map(n=>new Promise(r=>{const i=new Image();i.onload=()=>i.decode().then(r,r);i.onerror=r;i.src=F+n;})));
+render(0);

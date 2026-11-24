@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:"Inter",sans-serif}
+  #stage{position:absolute;inset:0;overflow:hidden}
+  .abs{position:absolute}
+  .hl{font-weight:900;text-transform:uppercase;text-align:center;color:#fff;line-height:1.02;letter-spacing:-1px;
+      text-shadow:0 6px 0 rgba(0,0,0,.45),0 0 30px rgba(0,0,0,.5)}
+  .chip{display:inline-block;font-weight:900;border-radius:999px;padding:14px 30px;font-size:44px;color:#fff;white-space:nowrap}
+  .card{background:#fff;border-radius:28px;box-shadow:0 18px 40px rgba(0,0,0,.45);color:#111}
+  .cap{left:60px;width:880px;text-align:center}
+  .capbox{display:inline-block;background:rgba(0,0,0,.62);border-radius:20px;padding:14px 26px;
+          font-weight:800;font-size:60px;color:#fff;line-height:1.15}
+  .kw{color:#ffd60a}
+  .tag{display:inline-block;font-size:28px;font-weight:900;border-radius:10px;padding:4px 12px;margin-right:14px;vertical-align:middle;position:relative;top:-6px}
+  .src{z-index:21;left:60px;top:1525px;font-size:26px;color:rgba(255,255,255,.78);font-weight:600}
+  .stamp{font-weight:900;border:10px solid;border-radius:18px;padding:10px 26px;text-transform:uppercase;white-space:nowrap}
+  .item{background:rgba(255,255,255,.95);color:#111;border-radius:18px;padding:16px 26px;font-size:42px;font-weight:800;white-space:nowrap}
+</style></head>
+<body><div id="stage"></div>
+<script>
+/* ===== timing (seconds, voice track at 1.12x) ===== */
+const SCN=[0,3.7,12.3,22.6,34.3,45.0,59.4,72.1];
+const END_VOICE=83.8, TOTAL=84.6;
+const L_START=[0,3.7,12.3,18.0,22.6,25.2,34.3,40.0,45.0,52.5,57.9,59.4,65.6,72.1];
+const L_DUR=[4.027,9.459,6.240,4.969,2.730,10.122,6.232,5.407,8.244,5.931,1.514,6.749,7.161,12.977].map(d=>d/1.12);
+const L_WHO=["C","C","C","P","C","P","C","P","C","P","C","C","P","C"];
+const L_TXT=[
+"¡El jefe de Nvidia renunció… y volvió en ONCE días!",
+"29 de octubre… inteligencia de Estados Unidos sospechaba de una amiga cercana suya: Alice Huang. Mismo apellido… ¡cero parentesco!",
+"Y el 8 de noviembre, él mismo escribió: «le fui infiel a mi esposa».",
+"¡Coco! Eso lo admitió él. Lo de espía… no.",
+"Entonces… ¿es espía?",
+"No está probado. China dice que es «pura invención»… Singapur no la investigó por espionaje… y Justicia de EE.UU. dice que no ha concluido nada.",
+"12 de noviembre: ¡renuncia! Y la prensa reporta otra relación… en la oficina.",
+"Sin confirmar. Lo grave, según la junta: no fue franco con ellos.",
+"¿Y la bolsa? ¡Se incendió! El 20 de noviembre la acción cayó 14% en un solo día… ¡casi medio billón de dólares, puf!",
+"Y eso que acababan de vender récord: 115 mil millones… en un trimestre.",
+"¿Y cómo volvió?",
+"¡23 de noviembre: lo regresan! Voto unánime… y la acción rebota 31%.",
+"Trump presionó… el gobierno dijo que no veía riesgo… pero la investigación independiente sigue abierta.",
+"Entonces… ¿el talento pesa más que la confianza? El 1 de diciembre lo esperan en el Congreso… y el 3, en el Senado. Eso te lo cuento en la Parte 2. Soy Coco… ¿tú lo perdonarías? Te leo."
+];
+const KW=/^(¡?\d+%?|ONCE|14%|31%|espía…?|espía|¿es|¡renuncia!|infiel|probado\.?|unánime…?|abierta\.|confianza\?|talento|récord:|billón|Parte|2\.|perdonarías\?|«pura|invención»…|cero|parentesco!|Alice|Huang\.|Trump|confirmar\.|franco|Congreso…|Senado\.|¡Se|incendió!|lo|regresan!)$/i;
+
+/* build caption chunks */
+const CHUNKS=[];
+L_TXT.forEach((txt,i)=>{
+  const w=txt.split(/\s+/); const groups=[]; let g=[];
+  w.forEach(word=>{g.push(word); if(g.length>=4 || (/[.!?:…»]$/.test(word)&&g.length>=2)){groups.push(g);g=[];}});
+  if(g.length){ if(groups.length && g.length===1) groups[groups.length-1].push(...g); else groups.push(g); }
+  const total=groups.reduce((a,gr)=>a+gr.join(" ").length+6,0);
+  let t=L_START[i];
+  groups.forEach(gr=>{const d=L_DUR[i]*(gr.join(" ").length+6)/total; CHUNKS.push({t0:t,t1:t+d,words:gr,who:L_WHO[i]}); t+=d;});
+});
+const KWSET=new Set(["once","14%","31%","espía","renuncia","infiel","probado","unánime","abierta","confianza","talento","récord","billón","perdonarías","pura","invención","parentesco","confirmar","franco","congreso","senado","incendió","regresan","115","20","23","29","8","12","1","3","2","alice","huang","trump","riesgo"]);
+const _OLD=new Set(["once","14%","31%","espía","espía…","¿es","¡renuncia!","infiel","probado.","unánime…","abierta.","confianza?","talento","récord:","billón","perdonarías?","«pura","invención»…","cero","parentesco!","confirmar.","franco","congreso…","senado.","incendió!","regresan!","115","20","23","29","8","12","1","3","parte","2."]);
+
+/* ===== helpers ===== */
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,3);
+const eBack=x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const pop=(t,t0,d=.35)=>t<t0?0:eBack(clamp((t-t0)/d));
+const fade=(t,t0,d=.25)=>eOut(lin(t,t0,t0+d));
+function rnd(s){const x=Math.sin(s*12.9898)*43758.5453;return x-Math.floor(x);}
+
+/* ===== characters (original designs) ===== */
+function coco(o={}){
+  const e=o.expr||"happy", flap=o.flap||0;
+  const eyes={
+    happy:`<path d="M133 170 Q150 150 167 170" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M233 170 Q250 150 267 170" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+    shock:`<circle cx="150" cy="163" r="14" fill="#151515"/><circle cx="145" cy="158" r="4.5" fill="#fff"/><circle cx="250" cy="163" r="14" fill="#151515"/><circle cx="245" cy="158" r="4.5" fill="#fff"/><path d="M128 132 L170 140" stroke="#151515" stroke-width="6" stroke-linecap="round"/><path d="M272 132 L230 140" stroke="#151515" stroke-width="6" stroke-linecap="round"/>`,
+    sad:`<path d="M133 160 Q150 176 167 160" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M233 160 Q250 176 267 160" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M132 140 L168 130" stroke="#151515" stroke-width="6" stroke-linecap="round"/><path d="M268 140 L232 130" stroke="#151515" stroke-width="6" stroke-linecap="round"/>`,
+    worried:`<path d="M133 170 Q150 156 167 170" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M233 170 Q250 156 267 170" stroke="#151515" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M130 136 L168 128" stroke="#151515" stroke-width="6" stroke-linecap="round"/><path d="M270 136 L232 128" stroke="#151515" stroke-width="6" stroke-linecap="round"/>`
+  }[e];
+  const mouth={
+    happy:`<path d="M172 250 Q200 276 228 250" stroke="#151515" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    shock:`<ellipse cx="200" cy="262" rx="17" ry="21" fill="#7a1f2b"/>`,
+    sad:`<path d="M176 266 Q200 250 224 266" stroke="#151515" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    worried:`<path d="M178 260 Q189 252 200 260 Q211 268 222 260" stroke="#151515" stroke-width="6" fill="none" stroke-linecap="round"/>`
+  }[e];
+  const ext=o.ext?`<g transform="translate(290 300) rotate(-25)"><rect x="0" y="0" width="56" height="120" rx="20" fill="#d62828"/><rect x="0" y="42" width="56" height="26" fill="#111"/><rect x="18" y="-22" width="20" height="26" fill="#9aa0a6"/><path d="M38 -12 L80 -40" stroke="#222" stroke-width="9" stroke-linecap="round"/></g>`:"";
+  return `<svg viewBox="0 0 400 480" width="100%" height="100%" overflow="visible">
+  <ellipse cx="200" cy="470" rx="140" ry="16" fill="rgba(0,0,0,.28)"/>
+  <ellipse cx="200" cy="380" rx="118" ry="88" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <ellipse cx="135" cy="452" rx="50" ry="25" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <ellipse cx="265" cy="452" rx="50" ry="25" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <ellipse cx="96" cy="372" rx="30" ry="48" fill="#fff" stroke="#e1e1e1" stroke-width="4" transform="rotate(${o.armL||15} 96 340)"/>
+  <ellipse cx="304" cy="372" rx="30" ry="48" fill="#fff" stroke="#e1e1e1" stroke-width="4" transform="rotate(${o.armR||-15} 304 340)"/>
+  ${ext}
+  <rect x="122" y="282" width="156" height="24" rx="12" fill="#d62828"/>
+  <circle cx="200" cy="318" r="18" fill="#f2c14e" stroke="#c99a2e" stroke-width="3"/>
+  <text x="200" y="326" font-size="22" font-weight="900" text-anchor="middle" fill="#7a5a12" font-family="Inter">C</text>
+  <ellipse cx="200" cy="190" rx="128" ry="112" fill="#fff" stroke="#e1e1e1" stroke-width="4"/>
+  <g transform="rotate(${8+flap} 98 128)"><path d="M98 118 C 46 126, 34 222, 58 262 C 80 294, 118 270, 120 222 C 122 180, 112 140, 98 118 Z" fill="#1d1d1f"/></g>
+  <g transform="rotate(${-8-flap} 302 128)"><path d="M302 118 C 354 126, 366 222, 342 262 C 320 294, 282 270, 280 222 C 278 180, 288 140, 302 118 Z" fill="#1d1d1f"/></g>
+  <ellipse cx="128" cy="225" rx="22" ry="13" fill="#ffb3c1" opacity=".85"/>
+  <ellipse cx="272" cy="225" rx="22" ry="13" fill="#ffb3c1" opacity=".85"/>
+  <ellipse cx="200" cy="238" rx="60" ry="42" fill="#f7f7f7"/>
+  ${eyes}
+  <ellipse cx="200" cy="214" rx="31" ry="22" fill="#151515"/>
+  <ellipse cx="189" cy="206" rx="9" ry="5" fill="#fff" opacity=".6"/>
+  ${mouth}
+  <path d="M80 152 C 82 52, 318 52, 320 152 Z" fill="#efe5cc" stroke="#d8cba8" stroke-width="4"/>
+  <path d="M200 60 L200 150 M140 72 C150 100 152 130 150 152 M260 72 C250 100 248 130 250 152" stroke="#ddd0ae" stroke-width="3" fill="none"/>
+  <circle cx="200" cy="64" r="10" fill="#e2d5b2"/>
+  <path d="M246 142 C 300 124, 372 130, 394 158 C 362 170, 300 164, 246 154 Z" fill="#a8b38a" stroke="#8f9a72" stroke-width="3"/>
+  </svg>`;
+}
+function pipo(o={}){
+  const e=o.expr||"calm";
+  const eyes={
+    calm:`<path d="M66 96 Q78 84 90 96" stroke="#3b2a00" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M110 96 Q122 84 134 96" stroke="#3b2a00" stroke-width="6" fill="none" stroke-linecap="round"/>`,
+    annoyed:`<path d="M66 94 L90 94" stroke="#3b2a00" stroke-width="7" stroke-linecap="round"/><path d="M110 94 L134 94" stroke="#3b2a00" stroke-width="7" stroke-linecap="round"/><path d="M64 78 L90 86" stroke="#3b2a00" stroke-width="5" stroke-linecap="round"/><path d="M136 78 L110 86" stroke="#3b2a00" stroke-width="5" stroke-linecap="round"/>`,
+    skeptical:`<path d="M66 94 L90 94" stroke="#3b2a00" stroke-width="7" stroke-linecap="round"/><path d="M110 96 Q122 84 134 96" stroke="#3b2a00" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M108 70 Q122 62 136 70" stroke="#3b2a00" stroke-width="5" fill="none" stroke-linecap="round"/>`
+  }[e];
+  return `<svg viewBox="0 0 200 230" width="100%" height="100%" overflow="visible">
+  <ellipse cx="100" cy="222" rx="70" ry="9" fill="rgba(0,0,0,.25)"/>
+  <path d="M100 42 C 92 14, 128 6, 122 30" stroke="#f0bd00" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <circle cx="100" cy="102" r="64" fill="#ffd83d" stroke="#e8bd1c" stroke-width="4"/>
+  ${eyes}
+  <ellipse cx="62" cy="114" rx="11" ry="7" fill="#ffab91" opacity=".8"/><ellipse cx="138" cy="114" rx="11" ry="7" fill="#ffab91" opacity=".8"/>
+  <ellipse cx="100" cy="116" rx="15" ry="10" fill="#ff8c2a"/>
+  <path d="M28 146 C 40 120, 160 120, 172 146 L 178 212 C 130 226, 70 226, 22 212 Z" fill="#d9363e"/>
+  <path d="M46 140 C 70 124, 130 124, 154 140 C 130 156, 70 156, 46 140 Z" fill="#8fe0c8"/>
+  <path d="M40 170 L160 172 M36 195 L164 197" stroke="#c22e35" stroke-width="4"/>
+  </svg>`;
+}
+function bear(o={}){
+  const e=o.expr||"proud";
+  const mouth={proud:`<path d="M132 170 Q150 186 168 170" stroke="#1f2937" stroke-width="6" fill="none" stroke-linecap="round"/>`,
+    sad:`<path d="M132 182 Q150 168 168 182" stroke="#1f2937" stroke-width="6" fill="none" stroke-linecap="round"/>`,
+    nervous:`<path d="M130 178 Q140 170 150 178 Q160 186 170 178" stroke="#1f2937" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M238 100 C 232 116, 248 124, 250 110 C 250 104, 244 96, 238 100 Z" fill="#8fd3ff"/>`}[e];
+  const brows=e==="sad"?`<path d="M100 98 L130 106 M200 98 L170 106" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>`:(e==="nervous"?`<path d="M100 104 L130 98 M200 104 L170 98" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>`:"");
+  const hold=o.box?`<rect x="70" y="270" width="160" height="96" rx="8" fill="#c8a165" stroke="#9c7a45" stroke-width="5"/><path d="M70 296 L230 296" stroke="#9c7a45" stroke-width="4"/><rect x="100" y="250" width="22" height="30" fill="#22c55e"/><rect x="170" y="244" width="30" height="36" fill="#e5e7eb"/>`
+    :`<g transform="translate(220 268) rotate(-10)"><rect width="52" height="52" rx="8" fill="#22c55e" stroke="#15803d" stroke-width="4"/><rect x="14" y="14" width="24" height="24" rx="3" fill="#14532d"/><path d="M8 -8 L8 0 M26 -8 L26 0 M44 -8 L44 0 M8 52 L8 60 M26 52 L26 60 M44 52 L44 60" stroke="#94a3b8" stroke-width="4"/></g>`;
+  return `<svg viewBox="0 0 300 390" width="100%" height="100%" overflow="visible">
+  <ellipse cx="150" cy="380" rx="110" ry="12" fill="rgba(0,0,0,.28)"/>
+  <path d="M70 232 C 70 204, 230 204, 230 232 L 248 362 C 200 378, 100 378, 52 362 Z" fill="#111"/>
+  <path d="M124 214 L150 276 L176 214 Z" fill="#2b2b2b"/>
+  <path d="M118 214 L150 300 M182 214 L150 300" stroke="#3a3a3a" stroke-width="6"/>
+  <path d="M150 300 L150 370" stroke="#444" stroke-width="4"/>
+  <circle cx="80" cy="66" r="34" fill="#6b7280"/><circle cx="80" cy="66" r="18" fill="#9ca3af"/>
+  <circle cx="220" cy="66" r="34" fill="#6b7280"/><circle cx="220" cy="66" r="18" fill="#9ca3af"/>
+  <circle cx="150" cy="130" r="96" fill="#6b7280"/>
+  <path d="M92 66 C 96 22, 140 14, 152 42 C 162 10, 214 18, 210 64 C 190 46, 120 44, 92 66 Z" fill="#dfe3e8"/>
+  <circle cx="115" cy="122" r="10" fill="#111"/><circle cx="112" cy="119" r="3" fill="#fff"/>
+  <circle cx="185" cy="122" r="10" fill="#111"/><circle cx="182" cy="119" r="3" fill="#fff"/>
+  ${brows}
+  <ellipse cx="150" cy="162" rx="46" ry="32" fill="#b9bec7"/>
+  <ellipse cx="150" cy="148" rx="16" ry="11" fill="#1f2937"/>
+  ${mouth}
+  ${hold}
+  </svg>`;
+}
+function chair(){return `<svg viewBox="0 0 300 360" width="100%" height="100%"><rect x="70" y="20" width="160" height="170" rx="30" fill="#374151" stroke="#4b5563" stroke-width="6"/><rect x="50" y="180" width="200" height="50" rx="20" fill="#4b5563"/><rect x="140" y="230" width="20" height="70" fill="#6b7280"/><path d="M70 330 L150 300 L230 330 M150 300 L150 340" stroke="#6b7280" stroke-width="12" stroke-linecap="round"/><circle cx="70" cy="335" r="12" fill="#111"/><circle cx="230" cy="335" r="12" fill="#111"/><circle cx="150" cy="345" r="12" fill="#111"/></svg>`;}
+function silhouette(){return `<svg viewBox="0 0 200 220" width="100%" height="100%"><circle cx="100" cy="70" r="50" fill="#9aa3b2"/><path d="M20 210 C 20 140, 180 140, 180 210 Z" fill="#9aa3b2"/><text x="100" y="92" font-size="70" font-weight="900" text-anchor="middle" fill="#fff" font-family="Inter">?</text></svg>`;}
+
+/* ===== placement helpers ===== */
+function el(html,x,y,w,h,{s=1,r=0,o=1,ox="50%",oy="100%",z=1}={}){
+  if(o<=0.001||s<=0.001) return "";
+  return `<div class="abs" style="left:${x}px;top:${y}px;width:${w}px;${h?`height:${h}px;`:""}opacity:${o};transform:rotate(${r}deg) scale(${s});transform-origin:${ox} ${oy};z-index:${z}">${html}</div>`;
+}
+function hl(text,y,t,t0,{size=92,color="#fff",w=960}={}){
+  const s=pop(t,t0,.4); return el(`<div class="hl" style="font-size:${size}px;color:${color}">${text}</div>`,(1080-w)/2,y,w,0,{s,ox:"50%",oy:"50%",z:5});
+}
+function chipEl(text,x,y,bg,t,t0,{size=44,z=6,r=0}={}){return el(`<div class="chip" style="background:${bg};font-size:${size}px">${text}</div>`,x,y,0,0,{s:pop(t,t0),ox:"0%",oy:"50%",z,r});}
+function stampEl(text,cx,y,color,t,t0,{size=78,r=-8}={}){
+  if(t<t0) return ""; const p=clamp((t-t0)/.22); const s=1+(1-eOut(p))*1.8;
+  return `<div class="abs" style="left:0;width:1080px;top:${y}px;text-align:center;z-index:8;opacity:${clamp(p*2)}"><span class="stamp" style="display:inline-block;color:${color};border-color:${color};font-size:${size}px;transform:rotate(${r}deg) scale(${s});background:rgba(0,0,0,.35)">${text}</span></div>`;
+}
+function itemEl(text,y,t,t0,{bg="rgba(255,255,255,.95)",color="#111",x=70,size=42}={}){
+  const p=fade(t,t0,.3); if(p<=0) return "";
+  return `<div class="abs" style="left:${x-(1-p)*120}px;top:${y}px;opacity:${p};z-index:6"><div class="item" style="background:${bg};color:${color};font-size:${size}px">${text}</div></div>`;
+}
+const BG={0:["#5a1018","#14060a"],1:["#13284d","#060b18"],2:["#2c1b55","#0c0718"],3:["#4a1212","#120404"],4:["#2a2f3a","#0b0d12"],5:["#4d0f0f","#140303"],6:["#0f4a2c","#03140b"],7:["#20205a","#07071a"]};
+
+/* ===== scene renderers ===== */
+function sceneIndex(t){let i=0;for(let k=0;k<SCN.length;k++) if(t>=SCN[k]) i=k; return i;}
+function cocoAt(x,y,w,t,o={}){ // bob + squash
+  const bob=Math.sin(t*6)*6*(o.bob??1), flap=Math.sin(t*9)*6*(o.flapAmt??1);
+  const s=(o.s??1)*(o.enter!=null?pop(t,o.enter,.45):1);
+  return el(coco({...o,flap}),x,y+bob,w,w*1.2,{s,r:o.r||0,z:o.z||4});
+}
+function pipoAt(x,y,w,t,o={}){const bob=Math.sin(t*7+1)*5; const s=o.enter!=null?pop(t,o.enter,.45):1; return el(pipo(o),x,y+bob,w,w*1.15,{s,r:o.r||0,z:5});}
+function bearAt(x,y,w,t,o={}){const bob=Math.sin(t*5)*4; const s=o.enter!=null?pop(t,o.enter,.45):1; return el(bear(o),x,y+bob,w,w*1.3,{s,r:o.r||0,z:o.z||3});}
+
+function render(t){
+  const loop = t>=END_VOICE;
+  const si = loop?0:sceneIndex(t), ts=SCN[si];
+  const [c1,c2]=BG[si];
+  let h=`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 38%, ${c1} 0%, ${c2} 75%)"></div>`;
+  // drifting dots
+  let dots="";for(let i=0;i<26;i++){const x=(rnd(i)*1080+t*18*(0.5+rnd(i+9)))%1080,y=(rnd(i+3)*1920+t*10)%1920;dots+=`<circle cx="${x}" cy="${y}" r="${3+rnd(i+5)*5}" fill="rgba(255,255,255,${.05+rnd(i+7)*.08})"/>`;}
+  h+=`<svg class="abs" style="inset:0" width="1080" height="1920">${dots}</svg>`;
+  let s="";  // scene content
+  if(loop){ s+=hl("EL CEO MÁS PODEROSO<br>RENUNCIÓ…",170,t,END_VOICE-1,{size:84}); s+=cocoAt(230,760,620,t,{expr:"shock",flapAmt:2.5}); }
+  else if(si===0){
+    s+=hl("EL CEO MÁS PODEROSO<br>RENUNCIÓ…",170,t,0,{size:84});
+    s+=hl("…Y VOLVIÓ<br>EN 11 DÍAS",480,t,1.6,{color:"#ffd60a",size:104});
+    const shake=t<.6?Math.sin(t*70)*10*(1-t/.6):0;
+    s+=el(coco({expr:"shock",flap:Math.sin(t*14)*14}),230+shake,760,620,744,{s:pop(t,0,.3)});
+  } else if(si===1){
+    s+=chipEl("29 OCT",60,120,"#d62828",t,ts);
+    s+=hl("LA SOSPECHA",220,t,ts+.1);
+    if(t<6.5){ const p=pop(t,3.9);
+      s+=el(`<div class="card" style="padding:34px 40px;transform:rotate(-2deg)"><div style="font-size:30px;font-weight:800;color:#888;letter-spacing:2px">TITULAR · 29 OCT</div><div style="font-size:52px;font-weight:900;line-height:1.08;margin-top:10px">Inteligencia de EE.UU. sospechaba de alguien muy cercano al CEO de Nvidia</div><div style="height:14px;background:#e5e7eb;border-radius:7px;margin-top:22px;width:90%"></div><div style="height:14px;background:#e5e7eb;border-radius:7px;margin-top:12px;width:70%"></div></div>`,120,400,840,0,{s:p,ox:"50%",oy:"50%"});
+    } else {
+      s+=bearAt(110,390,250,t,{expr:"proud",enter:6.5});
+      s+=el(`<div style="text-align:center;font-weight:900;font-size:30px;color:#fff;line-height:1.15">JEFE CHAMARRA<br><span style="font-weight:600;font-size:24px;opacity:.85">caricatura del CEO de Nvidia</span></div>`,70,735,330,0,{o:fade(t,6.7)});
+      s+=el(silhouette(),690,420,240,264,{s:pop(t,7.4)});
+      s+=el(`<div style="text-align:center;font-weight:900;font-size:34px;color:#fff">ALICE HUANG<br><span style="font-weight:600;font-size:24px;opacity:.85">ejecutiva vinculada a Megaspeed</span></div>`,620,735,380,0,{o:fade(t,7.6)});
+      s+=el(`<div class="hl" style="font-size:80px;color:#ffd60a">≠</div><div style="font-weight:900;font-size:34px;color:#ffd60a;text-align:center">CERO<br>PARENTESCO</div>`,415,500,250,0,{s:pop(t,10.2),ox:"50%",oy:"50%"});
+    }
+    s+=cocoAt(560,900,430,t,{expr:"worried",r:-6,armR:-60});
+  } else if(si===2){
+    s+=chipEl("8 NOV",60,120,"#d62828",t,ts);
+    s+=hl("LA CARTA",220,t,ts+.1);
+    s+=el(`<div class="card" style="background:#fffaf0;padding:40px 46px;transform:rotate(2deg)"><div style="font-size:30px;color:#9a8f7a;font-weight:700">Carta de Jensen Huang · 8 nov 2026</div><div style="font-family:'Liberation Serif',serif;font-style:italic;font-size:62px;margin-top:16px;line-height:1.1">“I was unfaithful to my wife”</div><div style="font-size:38px;font-weight:800;margin-top:16px;color:#b91c1c">«Le fui infiel a mi esposa»</div></div>`,110,390,860,0,{s:pop(t,12.5),ox:"50%",oy:"50%"});
+    s+=cocoAt(90,880,470,t,{expr:t<18?"shock":"worried",enter:12.4});
+    if(t>=18){ s+=pipoAt(640,1000,300,t,{expr:"annoyed",enter:18.0}); }
+    s+=itemEl("✔ ADMITIDO: la infidelidad",770,t,18.5,{bg:"#16a34a",color:"#fff"});
+    s+=itemEl("✘ NO PROBADO: lo de espía",860,t,20.2,{bg:"#dc2626",color:"#fff"});
+  } else if(si===3){
+    const sh=t<ts+.5?Math.sin(t*60)*8:0;
+    s+=el(`<div class="hl" style="font-size:190px;color:#ffd60a">¿ESPÍA?</div>`,40+sh,170,1000,0,{s:pop(t,ts+.05),ox:"50%",oy:"50%",z:5});
+    s+=stampEl("NO PROBADO",0,440,"#ff3b3b",t,25.3,{size:96});
+    s+=itemEl("China: «pura invención»",620,t,27.3);
+    s+=itemEl("Singapur: no la investigó por espionaje",715,t,29.5);
+    s+=itemEl("Justicia EE.UU.: «no ha concluido»",810,t,32.0);
+    s+=cocoAt(60,960,420,t,{expr:"worried",r:-4});
+    s+=pipoAt(620,1050,300,t,{expr:t<25.2?"calm":"skeptical",enter:24.9});
+  } else if(si===4){
+    s+=chipEl("12 NOV",60,120,"#d62828",t,ts);
+    s+=chipEl("DÍA 0",790,120,"#111",t,ts+.3);
+    s+=hl("¡RENUNCIA!",220,t,ts+.1,{size:120});
+    s+=el(chair(),390,420,300,360,{s:pop(t,ts+.2)});
+    const wx=360+eOut(lin(t,34.6,38.4))*520;
+    s+=el(bear({expr:"sad",box:true}),wx,430+Math.abs(Math.sin(t*8))*-12,240,312,{o:1-lin(t,38.0,38.6),z:3});
+    s+=itemEl("CEO interina: Colette Kress",800,t,35.6);
+    s+=itemEl("Prensa: ¿otra relación en la oficina?",890,t,37.8,{bg:"#fde68a"});
+    s+=stampEl("SIN CONFIRMAR",0,560,"#ff3b3b",t,40.1,{size:86,r:6});
+    s+=itemEl("Lo grave: no fue franco con la junta",980,t,42.0,{bg:"#ffd60a"});
+    s+=cocoAt(60,1050,400,t,{expr:"sad",bob:.4});
+    s+=pipoAt(680,1110,270,t,{expr:"skeptical",enter:39.9});
+  } else if(si===5){
+    s+=chipEl("20 NOV",60,120,"#d62828",t,ts);
+    s+=hl("¡LA BOLSA<br>SE INCENDIA!",210,t,ts+.1,{size:96});
+    // chart
+    const p=eOut(lin(t,45.3,48.6)); const pts=[[0,40],[90,52],[170,48],[250,90],[330,110],[420,220],[500,250],[560,300]];
+    let path="";const n=Math.max(1,Math.floor(p*(pts.length-1)));for(let i=0;i<=n;i++){const [x,y]=pts[i];path+=(i?"L":"M")+(x+40)+" "+(y+30);}
+    const flames=t>46.5?[0,1,2].map(i=>{const fx=380+i*70,fh=60+Math.sin(t*14+i)*18;return `<path d="M${fx} 360 C ${fx-30} ${360-fh*.5}, ${fx-6} ${360-fh*.8}, ${fx} ${360-fh} C ${fx+6} ${360-fh*.8}, ${fx+30} ${360-fh*.5}, ${fx} 360 Z" fill="${i%2?'#ffb703':'#fb5607'}"/>`;}).join(""):"";
+    s+=el(`<div class="card" style="background:#111827;padding:18px"><svg width="640" height="380"><path d="M40 20 L40 350 L630 350" stroke="#4b5563" stroke-width="4" fill="none"/><path d="${path}" stroke="#ef4444" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${flames}<text x="600" y="40" fill="#9ca3af" font-size="26" text-anchor="end" font-family="Inter" font-weight="700">NVDA</text></svg></div>`,60,480,676,0,{s:pop(t,ts+.2),ox:"0%",oy:"50%"});
+    const z=1+.12*Math.max(0,1-Math.abs(t-49.2)*3);
+    s+=el(`<div class="hl" style="font-size:96px;color:#ff3b3b;text-align:right">-14%</div><div class="hl" style="font-size:40px;text-align:right">EN UN DÍA</div>`,760,560,280,0,{s:pop(t,49.0)*z,ox:"50%",oy:"50%"});
+    s+=el(`<div class="chip" style="background:#ff3b3b;font-size:46px">≈ -490 MIL MILLONES $</div>`,60,880,0,0,{s:pop(t,50.6),ox:"0%",oy:"50%",z:7});
+    // coco with extinguisher + spray
+    s+=cocoAt(40,1010,420,t,{expr:"shock",ext:true,armR:-70});
+    if(t>46.5&&t<51.5){let sp="";for(let i=0;i<22;i++){const k=(t*3+rnd(i))%1;const x=380+k*260+rnd(i+1)*30,y=1180-k*260+Math.sin(i+t*9)*25;sp+=`<circle cx="${x}" cy="${y}" r="${8+k*22}" fill="rgba(255,255,255,${.75-k*.6})"/>`;}s+=`<svg class="abs" style="inset:0;z-index:6" width="1080" height="1920">${sp}</svg>`;}
+    if(t>=52.5){ s+=pipoAt(720,1160,250,t,{expr:"skeptical",enter:52.5});
+      s+=el(`<div class="card" style="background:#16a34a;color:#fff;padding:20px 28px;text-align:center"><div style="font-size:30px;font-weight:800">RÉCORD Q3</div><div style="font-size:54px;font-weight:900">$115.8 MIL MILLONES</div></div>`,470,985,560,0,{s:pop(t,52.8),ox:"50%",oy:"50%",z:7}); }
+    if(t>=57.9){ s+=el(`<div class="hl" style="font-size:110px;color:#ffd60a;background:rgba(0,0,0,.55);border-radius:30px;padding:20px">¿Y CÓMO<br>VOLVIÓ?</div>`,90,560,900,0,{s:pop(t,57.9),ox:"50%",oy:"50%",z:9}); }
+  } else if(si===6){
+    let cf="";for(let i=0;i<70;i++){const y=((t-ts)*(260+rnd(i)*220)+rnd(i+2)*-1900)%1920;if(y<-20)continue;const x=rnd(i+4)*1080+Math.sin(t*3+i)*30;cf+=`<rect x="${x}" y="${y}" width="16" height="26" fill="${["#ffd60a","#22c55e","#3b82f6","#ef4444","#fff"][i%5]}" transform="rotate(${t*200+i*40} ${x} ${y})"/>`;}
+    h+=`<svg class="abs" style="inset:0" width="1080" height="1920">${cf}</svg>`;
+    s+=chipEl("23 NOV",60,120,"#16a34a",t,ts);
+    s+=chipEl("DÍA 11",780,120,"#111",t,ts+.3);
+    s+=hl("¡VOLVIÓ!",220,t,ts+.1,{size:150,color:"#4ade80"});
+    s+=bearAt(370,410,340,t,{expr:"proud",enter:ts+.2});
+    s+=chipEl("VOTO UNÁNIME",80,470,"#2563eb",t,60.6);
+    const z=1+.15*Math.max(0,1-Math.abs(t-62.2)*3);
+    s+=el(`<div class="hl" style="font-size:120px;color:#4ade80;text-align:left;white-space:nowrap">+31% ▲</div>`,60,600,460,0,{s:pop(t,62.0)*z,ox:"50%",oy:"50%"});
+    s+=cocoAt(40,1000,420,t,{expr:"happy",armL:120,armR:-120,bob:2.2});
+    if(t>=65.6){ s+=pipoAt(700,1090,270,t,{expr:"skeptical",enter:65.6});
+      s+=itemEl("Trump presionó por su regreso",895,t,65.8);
+      s+=itemEl("Gobierno: «no vemos riesgo»",985,t,67.2); }
+    s+=stampEl("INVESTIGACIÓN: SIGUE ABIERTA",0,760,"#ffd60a",t,69.3,{size:58,r:-4});
+  } else if(si===7){
+    s+=el(`<div class="hl" style="font-size:110px"><span style="color:#ffd60a">¿TALENTO</span><br>O <span style="color:#7dd3fc">CONFIANZA?</span></div>`,40,190,1000,0,{s:pop(t,ts+.05),ox:"50%",oy:"50%",z:5});
+    s+=bearAt(90,470,230,t,{expr:"nervous",enter:75.0});
+    s+=el(`<svg width="60" height="160"><rect x="25" y="40" width="10" height="120" fill="#9ca3af"/><rect x="14" y="0" width="32" height="56" rx="16" fill="#374151"/></svg>`,330,560,60,160,{o:fade(t,75.2)});
+    s+=itemEl("1 DIC · Cámara (a puerta cerrada)",500,t,75.5,{x:330,size:36});
+    s+=itemEl("3 DIC · Senado (pública)",600,t,76.9,{x:330,size:36});
+    s+=chipEl("PARTE 2 →",620,720,"#d62828",t,79.0,{size:54});
+    s+=el(`<div class="hl" style="font-size:64px;color:#ffd60a">¿TÚ LO PERDONARÍAS? 👇</div>`,40,830,1000,0,{s:pop(t,80.9),ox:"50%",oy:"50%"});
+    s+=cocoAt(110,1000,420,t,{expr:"happy"});
+    s+=pipoAt(560,1090,280,t,{expr:"calm"});
+  }
+  // source line / copyright
+  const SRC=["","Fuente: The New York Times, 29 oct","Fuente: carta de Huang a empleados, 8 nov","Fuentes: Reuters · CNN · Gob. Singapur · DOJ","Fuentes: Nvidia · Reuters, 12 nov","Fuentes: Nasdaq, 20 nov · Nvidia (resultados Q3)","Fuentes: Nvidia, 23 nov · CNBC · CNN","Fuentes: Comité Bancario del Senado · CBS"];
+  if(!loop && si>0 && !(si===7&&t>80)) s+=`<div class="abs src">${SRC[si]}</div>`;
+  if(!loop && si===7 && t>80) s+=`<div class="abs src" style="width:900px;font-size:22px;line-height:1.3;opacity:${fade(t,80)}">©️ 2026 Coco / Ernesto · Contenido original informativo. Las acusaciones de espionaje son alegaciones no probadas; las investigaciones siguen abiertas.</div>`;
+  // captions
+  const ch=CHUNKS.find(c=>t>=c.t0&&t<c.t1+0.05);
+  if(ch&&!loop){
+    const clean=w=>w.toLowerCase().replace(/^[¡¿«]+/,"").replace(/[.,!?:…»]+$/,"");
+    const words=ch.words.map(w=>KWSET.has(clean(w))?`<span class="kw">${w}</span>`:w).join(" ");
+    const tag=ch.who==="P"?`<span class="tag" style="background:#ffd83d;color:#3b2a00">PIPO</span>`:`<span class="tag" style="background:#fff;color:#111">COCO</span>`;
+    const p=pop(t,ch.t0,.18);
+    s+=`<div class="abs cap" style="top:1415px;z-index:20;transform:scale(${.9+.1*p});opacity:${clamp(p*1.5)}"><span class="capbox">${tag}${words}</span></div>`;
+  }
+  // camera: slow push + cut flash
+  const zoom=1+0.04*lin(t,ts,ts+8);
+  const flash=(!loop&&si>0)?Math.max(0,1-(t-ts)/0.12):0;
+  document.getElementById("stage").innerHTML=`<div class="abs" style="inset:0;transform:scale(${zoom});transform-origin:50% 45%">${h}${s}</div><div class="abs" style="inset:0;background:#fff;opacity:${flash*0.7};z-index:50"></div>`;
+}
+window.render=render; window.TOTAL=TOTAL;
+render(0);
+</script></body></html>

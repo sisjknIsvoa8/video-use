@@ -1,0 +1,9 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autorización recibida</title><link rel="stylesheet" href="estilo.css"></head><body><main>
+<header><img src="coco.png" alt="Coco"><h1>Autorización de TikTok</h1></header>
+<p id="msg">Procesando…</p>
+<script>
+const q=new URLSearchParams(location.search);
+document.getElementById('msg').textContent=q.get('error')?('TikTok devolvió un error: '+q.get('error')):(q.get('code')?'¡Listo! TikTok autorizó la aplicación. Ya puedes volver a la conversación con Claude.':'No llegó ningún código de autorización.');
+</script>
+</main></body></html>

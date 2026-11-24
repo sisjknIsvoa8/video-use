@@ -1,0 +1,42 @@
+C="I1n8B4pOly0qmOu46LFX"; P="ifgQptCyquMG1K4fdoT3"
+PARTE2=[
+("C","[surprised] ¡La junta dijo que NO lo quería de vuelta... [pause] y días después votó que SÍ!"),
+("C","[quickly] Por si no viste la Parte 1: renunció el 12 de noviembre... y lo regresaron el 23."),
+("C","[whispers] El 17, el presidente de la junta dijo que NO pensaba restituirlo. [excited] ¡Hasta contrataron cazatalentos para buscar otro CEO!"),
+("P","[dryly] Y la junta estaba dividida. Eso lo reportó Semafor."),
+("C","[mischievously] Mientras, Trump en público: \"no me molestaría que volviera\"... [pause] y luego: \"que pida perdón y regrese\"."),
+("C","[excited] ¡Y el domingo 22... Trump se conectó a la reunión de la junta! [whispers] Y la presión la encabezó el vicepresidente, JD Vance."),
+("P","[sarcastic] Después Trump lo dijo en televisión: \"los convencí\"."),
+("C","[happy] Lunes 23: voto unánime... [laughs] y la acción subió TREINTA Y UNO por ciento."),
+("P","[serious] Pero la investigación independiente sigue abierta."),
+("C","[curious] ¿Y en Washington? Republicanos y demócratas lo criticaron. Y los demócratas pidieron registros de Nvidia a Cantor Fitzgerald, la firma de la familia del secretario de Comercio."),
+("P","[dryly] Cantor lo niega... y Comercio dice que Lutnick ya vendió su parte."),
+("C","[curious] ¿Y los chips? ¿A dónde fueron? Eso te lo cuento en la Parte 3. [warmly] ¿Tú crees que Trump hizo bien? Te leo."),
+]
+PARTE3=[
+("C","[surprised] ¡Una empresa de Singapur compró más de cuatro mil millones de dólares en chips de Nvidia... [pause] y su gran cliente era chino!"),
+("C","[whispers] Se llama Megaspeed. ¿Te acuerdas de Alice Huang? Era ejecutiva ahí. [quickly] La empresa dice que se fue en agosto de 2025."),
+("C","[curious] Y según el New York Times, su mayor cliente y financiador era Alibaba."),
+("P","[dryly] Alibaba dice que eso no tiene fundamento."),
+("C","[mischievously] ¿El truco? Los chips no viajaban a China. Se quedaban en centros de datos en Malasia... y desde China los usaban a distancia, como quien renta una computadora."),
+("P","[serious] Y ojo: eso, en ese momento, no estaba prohibido."),
+("C","[nervous] Pero dos fuentes le dijeron al Times que a veces sí se contrabandeaban chips a China."),
+("P","[serious] No está probado. Es justo lo que investigan."),
+("C","[curious] Comercio la investiga desde 2024... ahora Justicia lleva un caso criminal... y Malasia investiga a su filial, Speedmatrix."),
+("C","[nervous] Y lo más delicado: Alibaba cofundó un laboratorio que ha trabajado en simulaciones militares."),
+("P","[skeptical] Pero no se sabe si esos chips llegaron ahí. Nadie lo ha demostrado."),
+("C","[excited] ¿La respuesta de Washington? 16 de noviembre: nueva regla. Licencia para mandar chips a Malasia, Singapur, Tailandia, Indonesia y Brasil... y para rentar esa potencia a empresas chinas."),
+("C","[curious] Y el 3 de diciembre, Jensen Huang declara en el Senado. Te lo cuento en la Parte 4. [warmly] ¿Tú crees que los chips terminaron en China? Te leo."),
+]
+PARTE4=[
+("C","[surprised] En junio lo invitaron al Senado... ¡y dijo que NO! [laughs] Ofreció un tour por sus oficinas en lugar de declarar."),
+("C","[whispers] Pero ahora el presidente del Comité Bancario, Tim Scott, lo llamó... y amenazó con citatorios si se negaba."),
+("P","[dryly] Y esta vez aceptó."),
+("C","[excited] El calendario: 1 de diciembre, tres comités de la Cámara, a puerta cerrada. Y el 3, a las diez de la mañana, audiencia pública en el Senado... con él como único testigo."),
+("P","[serious] Su primera vez declarando en público ante el Congreso."),
+("C","[curious] La audiencia es sobre controles de exportación. Y lo que el Congreso ya investiga: Megaspeed, los chips que pudieron llegar a China... y el papel del Departamento de Comercio."),
+("C","[nervous] Y hay más frentes: la SEC estaría revisando si Nvidia engañó a inversionistas, California le mandó un citatorio, Missouri investiga daños a sus fondos de pensiones... y hay una demanda colectiva de accionistas."),
+("P","[serious] Ojo: nada de eso es una condena. Son investigaciones en etapa inicial."),
+("C","[curious] Y el secretario de Comercio, Howard Lutnick, también fue llamado a declarar."),
+("C","[mischievously] ¿Qué va a decir Jensen? Lo vemos el 3 de diciembre, en la Parte 5. [warmly] Y dime: ¿tú qué le preguntarías? Te leo."),
+]
