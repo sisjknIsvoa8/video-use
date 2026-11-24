@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:"Inter",sans-serif}
+#stage{position:absolute;inset:0;overflow:hidden}.abs{position:absolute}
+.cap{position:absolute;left:50px;width:980px;text-align:center;top:1400px;z-index:30;font-weight:900;font-size:74px;line-height:1.05;color:#fff;text-transform:uppercase;
+ -webkit-text-stroke:10px #1d1d1f;paint-order:stroke fill;letter-spacing:1px}
+.kw{color:#ffd60a}
+.chip{display:inline-block;font-weight:900;border-radius:999px;padding:12px 28px;font-size:40px;color:#fff;white-space:nowrap;box-shadow:0 8px 0 rgba(0,0,0,.25)}
+.bubble{background:#fff;border-radius:34px;padding:26px 34px;font-size:46px;font-weight:700;color:#111;box-shadow:0 12px 30px rgba(0,0,0,.35);line-height:1.2}
+</style></head>
+<body><div id="stage"></div>
+<script src="../leo/timing.js"></script>
+<script>
+const M=window.META, ENV=window.ENV||[];
+const END=M.total, TOTAL=END+2.6;
+const SCN=M.starts; // one scene per narration line
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,3);
+const eBack=x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const pop=(t,t0,d=.35)=>t<t0?0:eBack(clamp((t-t0)/d));
+const fade=(t,t0,d=.25)=>eOut(lin(t,t0,t0+d));
+function rnd(s){const x=Math.sin(s*12.9898)*43758.5453;return x-Math.floor(x);}
+function el(html,x,y,w,h,{s=1,r=0,o=1,ox="50%",oy="100%",z=1}={}){if(o<=0.001||s<=0.001)return "";return `<div class="abs" style="left:${x}px;top:${y}px;width:${w}px;${h?`height:${h}px;`:""}opacity:${o};transform:rotate(${r}deg) scale(${s});transform-origin:${ox} ${oy};z-index:${z}">${html}</div>`;}
+const OL="#2b2233", SK="#e9b38c", HAIR="#4a2f22", HOOD="#47b37b";
+
+/* ---------- LEO (original) ---------- */
+function leoHead(e,t,o={}){
+  const bl=((t+.7)%3.3)<.12?1:0;
+  const eyes={sad:`<path d="M120 178 Q132 186 144 178" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M196 178 Q208 186 220 178" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    open:`<ellipse cx="132" cy="176" rx="11" ry="${bl?2:14}" fill="${OL}"/><ellipse cx="208" cy="176" rx="11" ry="${bl?2:14}" fill="${OL}"/><circle cx="128" cy="170" r="4" fill="#fff"/><circle cx="204" cy="170" r="4" fill="#fff"/>`,
+    wide:`<circle cx="132" cy="176" r="20" fill="#fff" stroke="${OL}" stroke-width="5"/><circle cx="132" cy="178" r="9" fill="${OL}"/><circle cx="208" cy="176" r="20" fill="#fff" stroke="${OL}" stroke-width="5"/><circle cx="208" cy="178" r="9" fill="${OL}"/>`,
+    happy:`<path d="M118 180 Q132 162 146 180" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M194 180 Q208 162 222 180" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    closed:`<path d="M118 180 L146 180" stroke="${OL}" stroke-width="7" stroke-linecap="round"/><path d="M194 180 L222 180" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`};
+  const ex=o.expr||"sad";
+  const ey={sad:eyes.sad,cry:eyes.sad,neutral:eyes.open,smile:eyes.happy,shock:eyes.wide,tired:eyes.open,sleep:eyes.closed,think:eyes.open}[ex];
+  const brows={sad:`<path d="M112 150 L148 140 M228 150 L192 140" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`,cry:`<path d="M112 150 L148 138 M228 150 L192 138" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`,
+    shock:`<path d="M112 134 L150 142 M228 134 L190 142" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`,think:`<path d="M112 146 L148 146 M192 138 L228 148" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`}[ex]||`<path d="M114 146 L148 144 M192 144 L226 146" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`;
+  const mouth={sad:`<path d="M150 236 Q170 222 190 236" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/>`,cry:`<path d="M146 240 Q170 214 194 240 Z" fill="#7a2232" stroke="${OL}" stroke-width="5"/>`,
+    neutral:`<path d="M154 232 L186 232" stroke="${OL}" stroke-width="7" stroke-linecap="round"/>`,smile:`<path d="M146 226 Q170 252 194 226" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    shock:`<ellipse cx="170" cy="236" rx="16" ry="20" fill="#7a2232" stroke="${OL}" stroke-width="5"/>`,tired:`<path d="M152 236 Q170 230 188 236" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    sleep:`<path d="M156 232 Q170 238 184 232" stroke="${OL}" stroke-width="6" fill="none" stroke-linecap="round"/>`,think:`<path d="M152 236 Q166 230 188 238" stroke="${OL}" stroke-width="7" fill="none" stroke-linecap="round"/>`}[ex];
+  const tears=ex==="cry"?[0,1].map(i=>{const k=((t*1.3+i*.5)%1);return `<path d="M${i?212:128} ${196+k*70} q-8 14 0 22 q8 -8 0 -22z" fill="#7cc7ff" opacity="${1-k}"/>`;}).join("")+`<path d="M120 190 L120 230 M220 190 L220 230" stroke="#7cc7ff" stroke-width="8" stroke-linecap="round" opacity=".7"/>`:"";
+  const bags=(ex==="tired"||ex==="sad")?`<path d="M118 198 Q132 206 146 198 M194 198 Q208 206 222 198" stroke="#b07a6a" stroke-width="4" fill="none"/>`:"";
+  const curls=[[70,110,40],[100,72,44],[150,56,48],[205,62,46],[250,92,42],[275,130,32],[62,148,28],[130,84,30],[185,80,30]].map(([x,y,r],i)=>`<circle cx="${x}" cy="${y+Math.sin(t*3+i)*1.5}" r="${r}" fill="${HAIR}" stroke="${OL}" stroke-width="6"/>`).join("");
+  return `<ellipse cx="60" cy="190" rx="22" ry="30" fill="${SK}" stroke="${OL}" stroke-width="6"/><ellipse cx="280" cy="190" rx="22" ry="30" fill="${SK}" stroke="${OL}" stroke-width="6"/>
+   <ellipse cx="170" cy="180" rx="118" ry="122" fill="${SK}" stroke="${OL}" stroke-width="7"/>${curls}
+   <path d="M90 120 Q170 70 252 122 L250 104 Q170 40 92 102 Z" fill="${HAIR}"/>
+   ${brows}${ey}${bags}<path d="M168 190 Q160 214 174 214" stroke="${OL}" stroke-width="5" fill="none" stroke-linecap="round"/>
+   <ellipse cx="108" cy="214" rx="16" ry="9" fill="#f29a8a" opacity=".55"/><ellipse cx="232" cy="214" rx="16" ry="9" fill="#f29a8a" opacity=".55"/>${mouth}${tears}`;
+}
+function leo(o={}){ // full body, viewBox 340x720
+  const t=o.t||0, run=o.run, arm=o.arm||"down";
+  const lg=run?Math.sin(t*16)*26:0;
+  const armR=arm==="phone"?`<path d="M250 330 Q300 300 236 262" stroke="${HOOD}" stroke-width="44" fill="none" stroke-linecap="round"/><circle cx="234" cy="262" r="24" fill="${SK}" stroke="${OL}" stroke-width="6"/><rect x="212" y="196" width="52" height="88" rx="10" fill="#1d1d1f" stroke="${OL}" stroke-width="5"/><rect x="218" y="204" width="40" height="70" rx="5" fill="${o.screen||'#8fd3ff'}"/>`
+    :arm==="up"?`<path d="M250 330 Q300 260 300 190" stroke="${HOOD}" stroke-width="44" fill="none" stroke-linecap="round"/><circle cx="300" cy="184" r="24" fill="${SK}" stroke="${OL}" stroke-width="6"/>`
+    :`<path d="M250 330 Q${282+lg*.6} 420 ${270+lg*.8} 480" stroke="${HOOD}" stroke-width="44" fill="none" stroke-linecap="round"/><circle cx="${270+lg*.8}" cy="486" r="24" fill="${SK}" stroke="${OL}" stroke-width="6"/>`;
+  const armL=arm==="bowl"?`<path d="M90 330 Q60 400 140 420" stroke="${HOOD}" stroke-width="44" fill="none" stroke-linecap="round"/>`
+    :`<path d="M90 330 Q${58-lg*.6} 420 ${70-lg*.8} 480" stroke="${HOOD}" stroke-width="44" fill="none" stroke-linecap="round"/><circle cx="${70-lg*.8}" cy="486" r="24" fill="${SK}" stroke="${OL}" stroke-width="6"/>`;
+  const bowl=arm==="bowl"?`<path d="M110 400 Q170 470 240 400 Z" fill="#f2f2f2" stroke="${OL}" stroke-width="6"/><ellipse cx="175" cy="400" rx="66" ry="14" fill="#e8a33d" stroke="${OL}" stroke-width="5"/>${[0,1,2].map(i=>`<path d="M${150+i*25} ${380-((t*40+i*20)%40)} q8 -10 0 -20" stroke="#fff" stroke-width="5" fill="none" opacity=".8"/>`).join("")}`:"";
+  return `<svg viewBox="0 0 340 720" width="100%" height="100%" overflow="visible">
+   <ellipse cx="170" cy="712" rx="120" ry="14" fill="rgba(0,0,0,.18)"/>
+   <path d="M120 520 L${118+lg} 680" stroke="#3d5a99" stroke-width="54" stroke-linecap="round"/><path d="M220 520 L${222-lg} 680" stroke="#3d5a99" stroke-width="54" stroke-linecap="round"/>
+   <ellipse cx="${112+lg}" cy="692" rx="44" ry="20" fill="#fff" stroke="${OL}" stroke-width="6"/><ellipse cx="${228-lg}" cy="692" rx="44" ry="20" fill="#fff" stroke="${OL}" stroke-width="6"/>
+   ${armL}
+   <path d="M80 330 Q80 290 170 288 Q260 290 260 330 L270 540 Q170 566 70 540 Z" fill="${HOOD}" stroke="${OL}" stroke-width="7"/>
+   <path d="M150 300 L146 360 M190 300 L194 360" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+   <path d="M120 450 L220 450 L210 500 L130 500 Z" fill="#3e9a6a" stroke="${OL}" stroke-width="5"/>
+   ${bowl}${armR}
+   <g transform="translate(0 ${o.headY||0}) rotate(${o.tilt||0} 170 300)"><g transform="translate(0 -10)">${leoHead(o.expr,t,o)}</g></g>
+   ${o.towel?`<path d="M60 90 Q170 -10 280 90 Q250 40 170 40 Q90 40 60 90Z" fill="#ff9fb2" stroke="${OL}" stroke-width="6"/><path d="M70 92 Q170 60 272 92" stroke="${OL}" stroke-width="6" fill="none"/>`:""}
+  </svg>`;
+}
+function leoBed(o={}){ // lying, viewBox 900x520
+  const t=o.t||0;
+  return `<svg viewBox="0 0 900 520" width="100%" height="100%" overflow="visible">
+   <rect x="20" y="250" width="860" height="200" rx="30" fill="#8a6a55" stroke="${OL}" stroke-width="8"/>
+   <rect x="40" y="200" width="820" height="120" rx="40" fill="#f4f1ea" stroke="${OL}" stroke-width="7"/>
+   <rect x="60" y="150" width="240" height="140" rx="50" fill="#fff" stroke="${OL}" stroke-width="7"/>
+   <g transform="translate(70 ${30+Math.sin(t*1.4)*3}) scale(.78) rotate(-8 170 180)">${leoHead(o.expr||"sad",t)}</g>
+   <path d="M280 ${215+Math.sin(t*1.4)*4} Q560 ${170+Math.sin(t*1.4)*6} 860 210 L860 330 L280 330 Z" fill="#7b8ce0" stroke="${OL}" stroke-width="7"/>
+   <path d="M330 250 Q560 220 840 250" stroke="#6575c9" stroke-width="6" fill="none"/>
+  </svg>`;
+}
+function chispa(o={}){ // viewBox 300x260
+  const t=o.t||0, wag=Math.sin(t*(o.happy?22:8))*25;
+  return `<svg viewBox="0 0 300 260" width="100%" height="100%" overflow="visible">
+   <ellipse cx="150" cy="252" rx="100" ry="10" fill="rgba(0,0,0,.18)"/>
+   <path d="M230 160 Q280 ${110+wag*.4} ${270+wag*.3} ${90+wag*.2}" stroke="#d9a066" stroke-width="20" fill="none" stroke-linecap="round"/>
+   <ellipse cx="170" cy="180" rx="80" ry="54" fill="#e8b878" stroke="${OL}" stroke-width="6"/>
+   <path d="M110 220 L108 250 M150 228 L150 252 M200 226 L202 250 M232 214 L236 248" stroke="${OL}" stroke-width="16" stroke-linecap="round"/>
+   <circle cx="92" cy="122" r="62" fill="#e8b878" stroke="${OL}" stroke-width="6"/>
+   <path d="M48 90 Q20 120 40 170 Q64 150 66 100Z" fill="#8a5a33" stroke="${OL}" stroke-width="5" transform="rotate(${Math.sin(t*6)*6} 50 90)"/>
+   <path d="M128 76 Q160 60 168 100 Q148 100 128 76Z" fill="#8a5a33" stroke="${OL}" stroke-width="5"/>
+   <circle cx="74" cy="118" r="8" fill="${OL}"/><circle cx="112" cy="118" r="8" fill="${OL}"/>
+   <ellipse cx="92" cy="140" rx="12" ry="9" fill="${OL}"/>
+   ${o.lick?`<path d="M86 152 Q92 ${176+Math.abs(Math.sin(t*14))*12} 100 152Z" fill="#ff7a9a" stroke="${OL}" stroke-width="4"/>`:`<path d="M80 154 Q92 164 104 154" stroke="${OL}" stroke-width="5" fill="none" stroke-linecap="round"/>`}
+   <rect x="58" y="170" width="70" height="16" rx="8" fill="#ff5a5f" stroke="${OL}" stroke-width="4"/>
+  </svg>`;
+}
+function phone(content,w,{glow=0,buzz=0,t=0}={}){
+  const sh=buzz?Math.sin(t*60)*8:0;
+  return `<div style="transform:rotate(${sh*.4}deg) translateX(${sh}px);width:${w}px;background:#1d1d1f;border-radius:60px;padding:22px;border:7px solid ${OL};box-shadow:0 0 ${glow*120}px rgba(140,200,255,${glow}),0 20px 40px rgba(0,0,0,.4)">
+   <div style="background:#f2f3f7;border-radius:42px;overflow:hidden;min-height:${w*1.5}px;padding:26px 20px">${content}</div></div>`;
+}
+function heartMeter(t,val,{show=true,crack=false}={}){
+  if(!show) return "";
+  return `<div class="abs" style="left:60px;top:250px;width:960px;z-index:25">
+   <div style="display:flex;align-items:center;gap:18px"><div style="font-size:70px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.25))">${crack?"💔":"❤️"}</div>
+   <div style="flex:1;height:46px;background:rgba(0,0,0,.35);border:5px solid ${OL};border-radius:30px;overflow:hidden"><div style="width:${val}%;height:100%;background:linear-gradient(90deg,#ff5a7a,#ff9bb0);border-radius:24px"></div></div>
+   <div style="font-size:52px;font-weight:900;color:#fff;-webkit-text-stroke:8px ${OL};paint-order:stroke fill;width:180px;text-align:right">${Math.round(val)}%</div></div>
+   <div style="font-size:30px;font-weight:900;color:#fff;-webkit-text-stroke:6px ${OL};paint-order:stroke fill;margin:6px 0 0 92px;letter-spacing:2px">CORAZÓN REPARADO</div></div>`;
+}
+function topBar(t,dia){
+  return `<div class="abs" style="left:60px;top:120px;z-index:26"><span class="chip" style="background:#ff5a7a">CAPÍTULO 1</span></div>`+
+   (dia?`<div class="abs" style="right:60px;top:110px;z-index:26;text-align:center;background:#fff;border:6px solid ${OL};border-radius:18px;width:170px;overflow:hidden;box-shadow:0 8px 0 rgba(0,0,0,.25);transform:scale(${pop(t,SCN[dia.s]||0)})"><div style="background:#ff5a7a;color:#fff;font-weight:900;font-size:26px;padding:4px">DÍA</div><div style="font-weight:900;font-size:64px;line-height:1.1;color:${OL}">${dia.n}</div></div>`:"");
+}
+/* ---------- scene backgrounds ---------- */
+function room(night){return `<div class="abs" style="inset:0;background:${night?"linear-gradient(#1b1f4a,#2a2f66)":"linear-gradient(#ffe1c7,#ffd0b0)"}"></div>
+  <div class="abs" style="left:700px;top:600px;width:260px;height:300px;background:${night?"#0e1233":"#bfe6ff"};border:12px solid ${night?"#4a4f8a":"#fff"};border-radius:16px">${night?`<div style="position:absolute;left:150px;top:40px;width:70px;height:70px;border-radius:50%;background:#fff6c2;box-shadow:-18px 0 0 0 #0e1233 inset"></div>`:""}</div>
+  <div class="abs" style="left:0;top:1240px;width:1080px;height:860px;background:${night?"#2b2557":"#d9a679"}"></div>`;}
+function bath(){return `<div class="abs" style="inset:0;background:linear-gradient(#cdeffd,#a9dff5)"></div>${[...Array(8)].map((_,i)=>`<div class="abs" style="left:${i*140}px;top:0;width:2px;height:1920px;background:rgba(255,255,255,.6)"></div>`).join("")}<div class="abs" style="left:0;top:1240px;width:1080px;height:860px;background:#7cc3e0"></div>`;}
+function street(t){const off=(t*260)%400;return `<div class="abs" style="inset:0;background:linear-gradient(#ffd6a5,#ffb4a2)"></div>${[0,1,2,3,4].map(i=>`<div class="abs" style="left:${i*400-off}px;top:${690+(i%2)*60}px;width:260px;height:${560-(i%2)*60}px;background:${["#ffadad","#bdb2ff","#a0c4ff","#caffbf","#fdffb6"][i]};border:8px solid ${OL};border-radius:10px"></div>`).join("")}<div class="abs" style="left:0;top:1240px;width:1080px;height:860px;background:#9aa0a6"></div><div class="abs" style="left:0;top:1262px;width:1080px;height:16px;background:repeating-linear-gradient(90deg,#fff 0 60px,transparent 60px 120px);background-position:${-off}px 0"></div>`;}
+
+/* ---------- captions ---------- */
+const KW=new Set(["veintisiete","mensaje","cinco","uno","canción","repetición","chispa","perrita","tres","caldo","audio","seis","cinco:","se","baña","avance","siete","correr","esquina","noche","celular","hablar","ella","contesta","visto","comenta","dos","capítulo"]);
+const CH=[];M.txt.forEach((tx,i)=>{const w=tx.split(/\s+/);const g=[];let c=[];w.forEach(x=>{c.push(x);if(c.length>=3||(/[.!?:…»]$/.test(x)&&c.length>=2)){g.push(c);c=[];}});if(c.length){if(g.length&&c.length===1)g[g.length-1].push(...c);else g.push(c);}
+ const tot=g.reduce((a,x)=>a+x.join(" ").length+5,0);let t=M.starts[i];g.forEach(x=>{const d=M.durs[i]*(x.join(" ").length+5)/tot;CH.push({t0:t,t1:t+d,w:x});t+=d;});});
+function caption(t){const c=CH.find(c=>t>=c.t0&&t<c.t1+.04);if(!c)return "";const clean=w=>w.toLowerCase().replace(/^[¡¿«]+/,"").replace(/[.,!?:…»]+$/,"");
+ const p=pop(t,c.t0,.16);return `<div class="cap" style="transform:scale(${.85+.15*p}) rotate(${(1-p)*-3}deg)">${c.w.map(w=>KW.has(clean(w))?`<span class="kw">${w}</span>`:w).join(" ")}</div>`;}
+
+/* ---------- render ---------- */
+function si(t){let i=0;for(let k=0;k<SCN.length;k++)if(t>=SCN[k])i=k;return i;}
+function render(t){
+  const s0=si(t), ts=SCN[s0]; let h="",s="",ui="";
+  let meter=3,crack=true,dia=null;
+  if(s0===0){h+=room(true);
+    ui+=el(`<div style="font-weight:900;font-size:96px;color:#fff;-webkit-text-stroke:12px ${OL};paint-order:stroke fill;text-align:center;line-height:1">LO DEJARON<br><span style="color:#ff5a7a">POR MENSAJE</span> 💔</div>`,40,380,1000,0,{s:pop(t,0.05),oy:"50%",z:20,o:1-lin(t,2.6,3.0)});
+    s+=el(phone(`<div style="font-size:28px;color:#888;text-align:center;margin-bottom:20px">Ella 🖤 · 23:48</div><div class="bubble" style="font-size:40px;border-radius:30px 30px 30px 8px">Creo que ya no siento lo mismo. Lo siento 💔</div>`,420,{t}),560,640,420,0,{s:pop(t,1.0),r:6,z:6});
+    s+=el(leo({t,expr:t<3.8?"shock":"cry",arm:"down"}),80,560,340,720,{z:5});
+    if(t>4.2) ui+=heartMeter(t,3,{crack:true});
+  } else if(s0===1){h+=room(true); dia={n:1,s:1}; meter=3;
+    s+=el(leoBed({t,expr:"tired"}),90,640,900,520,{z:4});
+    for(let i=0;i<5;i++){const k=((t*.5+i/5)%1);s+=el(`<div style="font-size:70px">${i%2?"🎵":"🎶"}</div>`,300+i*120+Math.sin(t*2+i)*30,700-k*400,80,0,{o:1-k,z:6});}
+    s+=el(`<div class="chip" style="background:#7b5cff">🔁 x${Math.floor(lin(t,ts+.5,ts+5)*46)+1}</div>`,620,560,0,0,{s:pop(t,ts+.5),ox:"0%",z:7});
+    s+=el(`<div style="font-size:110px">🍽️</div><div style="font-size:60px;margin:-90px 0 0 60px">❌</div>`,120,520,200,0,{s:pop(t,ts+2.4),z:7});
+  } else if(s0===2){h+=room(true); dia={n:1,s:1}; meter=3+2*lin(t,ts+2.5,ts+3.5);
+    s+=el(leoBed({t,expr:t<ts+2?"sad":"smile"}),90,640,900,520,{z:4});
+    s+=el(chispa({t,lick:t>ts+1.2,happy:true}),520+(1-eOut(lin(t,ts,ts+.8)))*500,560+Math.abs(Math.sin(t*8))*-20,300,260,{z:6});
+    for(let i=0;i<4;i++){if(t<ts+1.4)break;const k=((t*.7+i/4)%1);s+=el(`<div style="font-size:64px">💗</div>`,420+i*90,640-k*300,70,0,{o:1-k,z:7});}
+    if(t>ts+2.5) s+=el(`<div class="chip" style="background:#ff5a7a">+2% 💗</div>`,700,460,0,0,{s:pop(t,ts+2.5),ox:"0%",z:8});
+  } else if(s0===3){h+=room(false); dia={n:3,s:3}; meter=5+3*lin(t,ts+4,ts+5);
+    s+=el(phone(`<div style="font-size:28px;color:#888;text-align:center;margin-bottom:16px">Mamá 👩‍🦱❤️</div><div class="bubble" style="font-size:40px;margin-bottom:16px">Te dejé caldito en la puerta mijo 🍲</div><div class="bubble" style="font-size:40px;display:flex;align-items:center;gap:14px">▶️ <span style="flex:1;height:10px;background:#ccc;border-radius:6px"></span> 6:02</div>`,430,{t}),580,520,430,0,{s:pop(t,ts+.3),r:4,z:6});
+    s+=el(leo({t,expr:t<ts+2.6?"neutral":"smile",arm:t>ts+3.4?"bowl":"down"}),110,560,340,720,{z:5});
+    s+=el(`<div style="font-size:120px">${t>ts+3.4?"😮‍💨":""}</div>`,40,520,140,0,{z:7});
+    if(t>ts+4) s+=el(`<div class="chip" style="background:#ff5a7a">+3% 🍲</div>`,640,1060,0,0,{s:pop(t,ts+4),ox:"0%",z:8});
+  } else if(s0===4){h+=bath(); dia={n:5,s:4}; meter=8+4*lin(t,ts+1.6,ts+2.4);
+    for(let i=0;i<7;i++){const k=((t*.35+i/7)%1);s+=el(`<div style="width:${160+i*20}px;height:${90+i*10}px;border-radius:50%;background:rgba(255,255,255,.55);filter:blur(6px)"></div>`,80+i*130,1100-k*700,300,0,{o:.9-k*.8,z:3});}
+    s+=el(leo({t,expr:"smile",towel:true,arm:"up"}),370,560,340,720,{z:5});
+    for(let i=0;i<6;i++){const a=t*2+i;s+=el(`<div style="font-size:60px">✨</div>`,540+Math.cos(a)*300,820+Math.sin(a)*260,60,0,{z:6,o:.9});}
+    s+=el(`<div style="background:#ffd60a;border:7px solid ${OL};border-radius:28px;padding:16px 26px;font-weight:900;font-size:40px;text-align:center;box-shadow:0 10px 0 rgba(0,0,0,.25)">🏆 LOGRO DESBLOQUEADO<br><span style="font-size:54px">SE BAÑÓ</span></div>`,240,470,600,0,{s:pop(t,ts+1.5),oy:"50%",z:9});
+  } else if(s0===5){h+=street(t<ts+3.2?t:ts+3.2); dia={n:7,s:5}; meter=12+2*lin(t,ts+3.6,ts+4.4);
+    const stop=t>ts+3.2;
+    s+=el(leo({t,expr:stop?"tired":"smile",run:!stop,headY:stop?20:0,tilt:stop?12:0}),180,560,340,720,{z:5});
+    s+=el(chispa({t,happy:true}),560+(stop?Math.sin(t*6)*30:0),1020-Math.abs(Math.sin(t*12))*30,240,208,{z:6});
+    if(stop){s+=el(`<div style="background:#2e7d32;color:#fff;border:6px solid ${OL};border-radius:12px;padding:12px 26px;font-weight:900;font-size:44px">ESQUINA 🏁</div>`,620,560,0,0,{s:pop(t,ts+3.2),ox:"0%",z:7});
+      s+=el(`<div style="font-size:80px">💦</div>`,470,640,90,0,{o:.9,z:7});}
+  } else if(s0===6){h+=room(true); dia={n:7,s:5}; meter=14;
+    h+=`<div class="abs" style="inset:0;background:rgba(5,6,25,.45)"></div>`;
+    s+=el(leoBed({t,expr:t<ts+3?"sleep":"shock"}),90,640,900,520,{z:4});
+    s+=el(`<div style="font-weight:900;font-size:110px;color:#ff5a7a;font-family:'JetBrains Mono',monospace;text-shadow:0 0 30px #ff5a7a">3:07</div>`,360,460,400,0,{s:pop(t,ts+.4),oy:"50%",z:7});
+    if(t<ts+3) s+=el(`<div style="font-size:70px;font-weight:900;color:#fff">z</div>`,330,640-((t*60)%80),80,0,{o:.8,z:6});
+    if(t>ts+2.2){const g=.5+.5*Math.sin(t*20);s+=el(phone(`<div style="height:300px"></div>`,200,{glow:g,buzz:1,t}),780,900,200,0,{z:8});}
+  } else if(s0===7){h+=`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 50%,#2a2f66,#05061a)"></div>`; dia={n:7,s:5}; meter=14;
+    s+=el(phone(`<div style="font-size:30px;color:#888;text-align:center;margin-bottom:24px">Ella 🖤 · 3:07</div><div class="bubble" style="font-size:58px;border-radius:30px 30px 30px 8px">¿Podemos hablar?</div>`,560,{glow:.8,t}),260,430,560,0,{s:pop(t,ts+.1)*(1+.03*Math.sin(t*3)),oy:"50%",z:6});
+  } else {h+=`<div class="abs" style="inset:0;background:linear-gradient(135deg,#ffd6e7,#d7e3ff)"></div>`; dia={n:7,s:5}; meter=14;
+    const b=(lab,emo,col,x,t0)=>el(`<div style="width:440px;background:${col};border:8px solid ${OL};border-radius:40px;padding:26px 20px;text-align:center;box-shadow:0 14px 0 rgba(0,0,0,.25)"><div style="font-size:120px;font-weight:900;color:#fff;-webkit-text-stroke:8px ${OL};paint-order:stroke fill;line-height:1">${emo}</div><div style="font-size:48px;font-weight:900;color:#fff;-webkit-text-stroke:7px ${OL};paint-order:stroke fill">${lab}</div></div>`,x,440,440,0,{s:pop(t,t0)*(1+.04*Math.sin(t*5+x)),oy:"50%",z:8});
+    s+=b("CONTESTAR","1 💬","#4da3ff",70,ts+2.4);
+    s+=b("DEJAR EN VISTO","2 👀","#a06bff",570,ts+4.0);
+    s+=el(leo({t,expr:"think",arm:"phone",screen:"#ffd6e7"}),370,700,300,635,{z:6});
+    s+=el(`<div style="font-size:120px;font-weight:900;color:${OL}">?</div>`,700+Math.sin(t*3)*10,760,100,0,{z:7});
+    if(t>ts+6.5) ui+=el(`<div style="display:inline-block;white-space:nowrap;background:#ff5a7a;color:#fff;border:7px solid ${OL};border-radius:30px;padding:14px 30px;font-weight:900;font-size:52px;box-shadow:0 10px 0 rgba(0,0,0,.25)">COMENTA 1 O 2 👇</div>`,0,430,1080,0,{s:pop(t,ts+6.5),oy:"50%",z:30}).replace('<div class="abs"','<div class="abs" data-c="1"').replace('width:1080px;','width:1080px;text-align:center;');
+    if(t>=END) ui+=el(`<div style="font-weight:900;font-size:66px;color:#fff;-webkit-text-stroke:10px ${OL};paint-order:stroke fill;text-align:center;line-height:1.05">LO QUE GANE PASA<br><span style="color:#ffd60a">EN EL CAPÍTULO 2</span></div>`,40,1400,1000,0,{s:pop(t,END),oy:"50%",z:31});
+  }
+  s=`<div class="abs" style="inset:0;transform:translateY(170px)">${s}</div>`;
+  s+=topBar(t,dia);
+  if(s0>0) s+=heartMeter(t,meter,{crack:meter<10});
+  s+=ui+caption(t);
+  const z=1+.035*lin(t,ts,ts+6), wi=s0>0?clamp((t-ts)/.18):1;
+  document.getElementById("stage").innerHTML=`<div class="abs" style="inset:0;transform:translateX(${(1-eOut(wi))*300}px) scale(${z});transform-origin:50% 45%;filter:blur(${((1-eOut(wi))*10).toFixed(1)}px)">${h}${s}</div><div class="abs" style="left:0;bottom:20px;width:1080px;text-align:center;font-size:24px;font-weight:700;color:rgba(0,0,0,.4);z-index:40">©️ 2026 Reparando a Leo · personajes originales</div>`;
+}
+window.render=render;window.TOTAL=TOTAL;window.ready=Promise.resolve();render(0);
+</script></body></html>

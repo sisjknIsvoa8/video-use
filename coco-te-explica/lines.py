@@ -40,3 +40,15 @@ PARTE4=[
 ("C","[curious] Y el secretario de Comercio, Howard Lutnick, también fue llamado a declarar."),
 ("C","[mischievously] ¿Qué va a decir Jensen? Lo vemos el 3 de diciembre, en la Parte 5. [warmly] Y dime: ¿tú qué le preguntarías? Te leo."),
 ]
+N="u4L1errSjs4GPNGP5O5U"
+LEO1=[
+("N","[sad] Leo tiene veintisiete años... [pause] y anoche lo terminaron por mensaje. [slowly] Después de cinco años."),
+("N","[softly] Día uno: no come, no duerme... y escucha la misma canción en repetición."),
+("N","[warmly] Chispa, su perrita, es la única que no se despega de él."),
+("N","[amused] Día tres: su mamá le manda un tupper con caldo... [laughs] y un audio de seis minutos."),
+("N","[proudly] Día cinco: se baña. [pause] Es un avance."),
+("N","[excited] Día siete: decide salir a correr... [pause] [laughs] y llega hasta la esquina."),
+("N","[whispers] Pero esa noche, a las tres con siete de la mañana... le vibra el celular."),
+("N","[dramatically] «¿Podemos hablar?» [pause] Es ella."),
+("N","[curious] ¿Qué hace Leo? Uno: le contesta. Dos: la deja en visto. [warmly] Comenta uno o dos... lo que gane, pasa en el siguiente capítulo."),
+]

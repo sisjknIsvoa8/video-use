@@ -1,7 +1,7 @@
 import subprocess,json,struct,math,sys,os,glob
 part=sys.argv[1]; target=float(sys.argv[2])
-from lines import PARTE2,PARTE3,PARTE4
-L={"parte2":PARTE2,"parte3":PARTE3,"parte4":PARTE4}[part]
+from lines import PARTE2,PARTE3,PARTE4,LEO1
+L={"parte2":PARTE2,"parte3":PARTE3,"parte4":PARTE4,"leo":LEO1}[part]
 os.makedirs(f"{part}/proc",exist_ok=True)
 subprocess.run(["ffmpeg","-loglevel","error","-y","-f","lavfi","-i","anullsrc=r=44100:cl=mono","-t","0.15",f"{part}/proc/gap.wav"],check=True)
 durs=[];lst=[]
